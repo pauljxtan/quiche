@@ -1,0 +1,14 @@
+.kanban-board {
+  text-align: center;
+}
+.kanban-column-todo {
+  background: #c9c9ff;
+}
+.kanban-column-doing {
+  background: #c9c9ff;
+}
+.kanban-column-done {
+  background: #f1cbff;
+}
+
+
