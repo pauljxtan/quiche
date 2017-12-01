@@ -2,7 +2,7 @@
   text-align: center;
 }
 .kanban-column-todo {
-  background: #c9c9ff;
+  background: #e1f7d5;
 }
 .kanban-column-doing {
   background: #c9c9ff;
@@ -11,4 +11,10 @@
   background: #f1cbff;
 }
 
-
+/*
+#e1f7d5	(225,247,213)
+#ffbdbd	(255,189,189)
+#c9c9ff	(201,201,255)
+#ffffff	(255,255,255)
+#f1cbff	(241,203,255)
+*/
