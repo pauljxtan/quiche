@@ -1,14 +1,19 @@
 import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+import dragula from 'react-dragula';
+import 'react-dragula/dist/dragula.min.css';
 import './kanban.css';
+
+let drake = dragula({/*TODO*/});
 
 class KanbanBoard extends Component {
   render() {
     return (
       <div className="kanban-board">
         <div className="columns">
-            <KanbanColumnTodo />
-            <KanbanColumnDoing />
-            <KanbanColumnDone />
+          <KanbanColumnTodo ref="colTodo" />
+          <KanbanColumnDoing ref="colDoing" />
+          <KanbanColumnDone ref="colDone" />
         </div>
       </div>
     );
@@ -77,9 +82,15 @@ class KanbanColumn extends Component {
       <div className="kanban-column">
         <h3 className="title is-3">{this.props.title}</h3>
         <button onClick={() => this.addTask('Untitled', 'Anytime')}>+</button>
-        {taskCards}
+        <div className="kanban-task-cards" ref="cardContainer">
+          {taskCards}
+        </div>
       </div>
     );
+  }
+
+  componentDidMount() {
+    drake.containers.push(ReactDOM.findDOMNode(this.refs.cardContainer));
   }
 }
 

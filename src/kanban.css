@@ -10,6 +10,9 @@
 .kanban-column-done {
   background: #f1cbff;
 }
+.kanban-task-cards {
+  border: 1px solid rgba(255, 255, 255, 0.75);
+}
 
 /*
 #e1f7d5	(225,247,213)
