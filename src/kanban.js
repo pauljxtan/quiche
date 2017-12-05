@@ -1,8 +1,14 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import dragula from 'react-dragula';
+import { RIEInput } from 'riek';
 import 'react-dragula/dist/dragula.min.css';
 import './kanban.css';
+
+/*
+TODO:
+-- Refactor simple components to functional definition
+ */
 
 let drake = dragula({/*TODO*/});
 
@@ -66,22 +72,21 @@ class KanbanColumn extends Component {
     this.setState({
       tasks: this.state.tasks.concat([task])
     });
-    console.log(this.state.tasks);
   }
 
   render() {
     let taskCards = [];
     for (let task of this.state.tasks) {
       taskCards.push(
-        <nav className="level">
+        <nav className="level" key={task}>
           <KanbanTaskCard title={task.title} dueDate={task.dueDate} />
         </nav>);
     }
 
     return (
       <div className="kanban-column">
-        <h3 className="title is-3">{this.props.title}</h3>
-        <button onClick={() => this.addTask('Untitled', 'Anytime')}>+</button>
+        <h3 className="kanban-column-title title is-3">{this.props.title}</h3>
+        <button className="kanban-add-task button" onClick={() => this.addTask('Untitled', 'Anytime')}>+</button>
         <div className="kanban-task-cards" ref="cardContainer">
           {taskCards}
         </div>
@@ -103,11 +108,21 @@ class KanbanTaskCard extends Component {
     };
   }
 
+  update(prop) {
+    this.setState(prop);
+  }
+
   render() {
     return (
       <div className="kanban-task-card box is-fullwidth">
-        <h5 className="title is-5">{this.props.title}</h5>
+        <h5 className="title is-5">
+          <RIEInput className="title is-5"
+                    value={this.state.title}
+                    change={this.update.bind(this)}
+                    propName="title"/>
+        </h5>
         <h6 className="subtitle is-6">{this.props.dueDate}</h6>
+
       </div>
     )
   }

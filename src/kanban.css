@@ -1,23 +1,67 @@
 .kanban-board {
   text-align: center;
 }
-.kanban-column-todo {
-  background: #e1f7d5;
+.kanban-column-title {
+  display: inline-block;
 }
-.kanban-column-doing {
-  background: #c9c9ff;
-}
-.kanban-column-done {
-  background: #f1cbff;
+.kanban-add-task {
+  float: right;
 }
 .kanban-task-cards {
   border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 5px;
+  min-height: 256px;
+}
+.kanban-task-cards .level {
+  margin: 5px !important;
+}
+.kanban-column-todo {
+  background: rgb(225, 247, 213);
+}
+.kanban-column-todo .kanban-task-card .title,
+.kanban-column-todo .kanban-task-card .subtitle {
+  color: rgb(113, 124, 107);
+}
+.kanban-column-doing {
+  background: rgb(201, 201, 255);
+}
+.kanban-column-doing .kanban-task-card .title,
+.kanban-column-doing .kanban-task-card .subtitle
+{
+  color: rgb(101, 101, 128);
+}
+.kanban-column-done {
+  background: rgb(241, 203, 255);
+}
+.kanban-column-done .kanban-task-card .title,
+.kanban-column-done .kanban-task-card .subtitle
+{
+  color: rgb(121, 102, 128);
 }
 
 /*
+Light pastels:
 #e1f7d5	(225,247,213)
+  *0.75: (169,185,160)
+  *0.50: (113,124,107)
 #ffbdbd	(255,189,189)
 #c9c9ff	(201,201,255)
+  *0.50: (101,101,128)
 #ffffff	(255,255,255)
 #f1cbff	(241,203,255)
+
+Middle-ish pastels:
+#e3b2b2	(227,178,178)
+#eed896	(238,216,150)
+#97e1b3	(151,225,179)
+#8ec0d8	(142,192,216)
+#cfbaea	(207,186,234)
+
+Dark pastels:
+#e3b2b2	(227,178,178)
+#eed896	(238,216,150)
+#97e1b3	(151,225,179)
+#8ec0d8	(142,192,216)
+#cfbaea	(207,186,234)
 */
+
