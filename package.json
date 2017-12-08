@@ -8,7 +8,9 @@
     "react-scripts": "1.0.17",
     "react-dragula": "^1.1.17",
     "bulma": "^0.6.1",
-    "riek": "^1.1.0"
+    "riek": "^1.1.0",
+    "prop-types": "^15.6.0",
+    "react-cookie": "^2.1.2"
   },
   "scripts": {
     "start": "react-scripts start",

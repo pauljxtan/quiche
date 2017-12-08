@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import dragula from 'react-dragula';
 import { RIEInput } from 'riek';
+import { instanceOf } from 'prop-types';
+import { withCookies, Cookies } from 'react-cookie';
+
 import 'react-dragula/dist/dragula.min.css';
 import './kanban.css';
 
@@ -13,13 +16,24 @@ TODO:
 let drake = dragula({/*TODO*/});
 
 class KanbanBoard extends Component {
+  static propTypes = {
+    cookies: instanceOf(Cookies).isRequired
+  };
+
+  componentWillMount() {
+    const { cookies } = this.props;
+    this.setState({
+      tasks: cookies.get('tasks') || {'todo': [], 'doing': [], 'done': []}
+    });
+  }
+
   render() {
     return (
       <div className="kanban-board">
         <div className="columns">
-          <KanbanColumnTodo ref="colTodo" />
-          <KanbanColumnDoing ref="colDoing" />
-          <KanbanColumnDone ref="colDone" />
+          <KanbanColumnTodo ref="colTodo" tasks={this.state.tasks['todo']} />
+          <KanbanColumnDoing ref="colDoing" tasks={this.state.tasks['doing']} />
+          <KanbanColumnDone ref="colDone" tasks={this.state.tasks['done']} />
         </div>
       </div>
     );
@@ -30,7 +44,7 @@ class KanbanColumnTodo extends Component {
   render() {
     return (
       <div className="column is-third kanban-column-todo">
-        <KanbanColumn title="To-do" />
+        <KanbanColumn title="To-do" tasks={this.props.tasks}/>
       </div>
     );
   }
@@ -40,7 +54,7 @@ class KanbanColumnDoing extends Component {
   render() {
     return (
       <div className="column is-third kanban-column-doing">
-        <KanbanColumn title="Doing" />
+        <KanbanColumn title="Doing" tasks={this.props.tasks}/>
       </div>
     );
   }
@@ -50,7 +64,7 @@ class KanbanColumnDone extends Component {
   render() {
     return (
       <div className="column is-third kanban-column-done">
-        <KanbanColumn title="Done" />
+        <KanbanColumn title="Done" tasks={this.props.tasks}/>
       </div>
     );
   }
@@ -60,7 +74,7 @@ class KanbanColumn extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      tasks: [],
+      tasks: props.tasks
     };
   }
 
@@ -128,4 +142,4 @@ class KanbanTaskCard extends Component {
   }
 }
 
-export default KanbanBoard;
+export default withCookies(KanbanBoard);
