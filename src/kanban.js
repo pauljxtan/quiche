@@ -13,84 +13,102 @@ TODO:
 -- Refactor simple components to functional definition
  */
 
-let drake = dragula({/*TODO*/});
+const drake = dragula({/*TODO*/});
 
 class KanbanBoard extends Component {
   static propTypes = {
     cookies: instanceOf(Cookies).isRequired
   };
 
-  componentWillMount() {
+  constructor(props) {
+    super(props);
     const { cookies } = this.props;
-    this.setState({
+    this.state = {
       tasks: cookies.get('tasks') || {'todo': [], 'doing': [], 'done': []}
-    });
+    };
+  }
+
+  addTask(column) {
+    const task = {
+      title: 'Untitled',
+      dueDate: 'Anytime'
+    };
+    const prevTodo = this.state.tasks['todo'];
+    const prevDoing = this.state.tasks['doing'];
+    const prevDone = this.state.tasks['done'];
+
+    switch (column) {
+      case 'todo':
+        this.setState({
+          tasks: {'todo': prevTodo.concat([task]), 'doing': prevDoing, 'done': prevDone}
+        });
+        break;
+      case 'doing':
+        this.setState({
+          tasks: {'todo': prevTodo , 'doing': prevDoing.concat([task]), 'done': prevDone}
+        });
+        break;
+      case 'done':
+        this.setState({
+          tasks: {'todo': prevTodo , 'doing': prevDoing, 'done': prevDone.concat([task])}
+        });
+        break;
+      default:
+        break;
+    }
+    console.log(this.state.tasks);
+  }
+
+  renderTodoColumn() {
+    return (
+      <KanbanColumn title="To-do"
+                    tasks={this.state.tasks['todo']}
+                    addTaskCallback={() => this.addTask('todo')}
+      />
+    );
+  }
+
+  renderDoingColumn() {
+    return (
+      <KanbanColumn title="Doing"
+                    tasks={this.state.tasks['doing']}
+                    addTaskCallback={() => this.addTask('doing')}
+      />
+    );
+  }
+
+  renderDoneColumn() {
+    return (
+      <KanbanColumn title="Done"
+                    tasks={this.state.tasks['done']}
+                    addTaskCallback={() => this.addTask('done')}
+      />
+    );
   }
 
   render() {
     return (
       <div className="kanban-board">
         <div className="columns">
-          <KanbanColumnTodo ref="colTodo" tasks={this.state.tasks['todo']} />
-          <KanbanColumnDoing ref="colDoing" tasks={this.state.tasks['doing']} />
-          <KanbanColumnDone ref="colDone" tasks={this.state.tasks['done']} />
+          <div className="kanban-column-todo column is-third">
+            {this.renderTodoColumn()}
+          </div>
+          <div className="kanban-column-doing column is-third">
+            {this.renderDoingColumn()}
+          </div>
+          <div className="kanban-column-done column is-third">
+            {this.renderDoneColumn()}
+          </div>
         </div>
       </div>
     );
   }
 }
 
-class KanbanColumnTodo extends Component {
-  render() {
-    return (
-      <div className="column is-third kanban-column-todo">
-        <KanbanColumn title="To-do" tasks={this.props.tasks}/>
-      </div>
-    );
-  }
-}
-
-class KanbanColumnDoing extends Component {
-  render() {
-    return (
-      <div className="column is-third kanban-column-doing">
-        <KanbanColumn title="Doing" tasks={this.props.tasks}/>
-      </div>
-    );
-  }
-}
-
-class KanbanColumnDone extends Component {
-  render() {
-    return (
-      <div className="column is-third kanban-column-done">
-        <KanbanColumn title="Done" tasks={this.props.tasks}/>
-      </div>
-    );
-  }
-}
-
 class KanbanColumn extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      tasks: props.tasks
-    };
-  }
-
-  addTask(title, dueDate) {
-    let task = {
-      title: title,
-      dueDate: dueDate
-    };
-    this.setState({
-      tasks: this.state.tasks.concat([task])
-    });
-  }
-
   render() {
-    let taskCards = [];
-    for (let task of this.state.tasks) {
+    const taskCards = [];
+    for (let task of this.props.tasks) {
       taskCards.push(
         <nav className="level" key={task}>
           <KanbanTaskCard title={task.title} dueDate={task.dueDate} />
@@ -98,9 +116,9 @@ class KanbanColumn extends Component {
     }
 
     return (
-      <div className="kanban-column">
+      <div className="kanban-column column">
         <h3 className="kanban-column-title title is-3">{this.props.title}</h3>
-        <button className="kanban-add-task button" onClick={() => this.addTask('Untitled', 'Anytime')}>+</button>
+        <button className="kanban-add-task button" onClick={() => this.props.addTaskCallback()}>+</button>
         <div className="kanban-task-cards" ref="cardContainer">
           {taskCards}
         </div>
