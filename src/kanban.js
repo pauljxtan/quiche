@@ -1,11 +1,12 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 import dragula from 'react-dragula';
-import { RIEInput } from 'riek';
-import { instanceOf } from 'prop-types';
-import { withCookies, Cookies } from 'react-cookie';
+import {RIEInput} from 'riek';
+import {instanceOf} from 'prop-types';
+import {withCookies, Cookies} from 'react-cookie';
 
 import 'react-dragula/dist/dragula.min.css';
+import 'bulma-extensions/bulma-tooltip/bulma-tooltip.min.css';
 import './kanban.css';
 
 /*
@@ -13,7 +14,18 @@ TODO:
 -- Refactor simple components to functional definition
  */
 
-const drake = dragula({/*TODO*/});
+const drake = dragula(
+  {} // TODO: Log task moves
+);
+
+const LogActions = Object.freeze({
+  ADDED_TASK_TO_TODO: 0,
+  ADDED_TASK_TO_DOING: 1,
+  ADDED_TASK_TO_DONE: 2,
+  MOVED_TASK_TO_TODO: 3,
+  MOVED_TASK_TO_DOING: 4,
+  MOVED_TASK_TO_DONE: 5
+});
 
 class KanbanBoard extends Component {
   static propTypes = {
@@ -22,9 +34,10 @@ class KanbanBoard extends Component {
 
   constructor(props) {
     super(props);
-    const { cookies } = this.props;
+    const {cookies} = this.props;
     this.state = {
-      tasks: cookies.get('tasks') || {'todo': [], 'doing': [], 'done': []}
+      tasks: cookies.get('tasks') || {'todo': [], 'doing': [], 'done': []},
+      logItems: []
     };
   }
 
@@ -42,21 +55,53 @@ class KanbanBoard extends Component {
         this.setState({
           tasks: {'todo': prevTodo.concat([task]), 'doing': prevDoing, 'done': prevDone}
         });
+        this.logAction(LogActions.ADDED_TASK_TO_TODO, {'task': task});
         break;
       case 'doing':
         this.setState({
-          tasks: {'todo': prevTodo , 'doing': prevDoing.concat([task]), 'done': prevDone}
+          tasks: {'todo': prevTodo, 'doing': prevDoing.concat([task]), 'done': prevDone}
         });
+        this.logAction(LogActions.ADDED_TASK_TO_DOING, {'task': task});
         break;
       case 'done':
         this.setState({
-          tasks: {'todo': prevTodo , 'doing': prevDoing, 'done': prevDone.concat([task])}
+          tasks: {'todo': prevTodo, 'doing': prevDoing, 'done': prevDone.concat([task])}
         });
+        this.logAction(LogActions.ADDED_TASK_TO_DONE, {'task': task});
         break;
       default:
         break;
     }
-    console.log(this.state.tasks);
+  }
+
+  logAction(actionType, kwargs) {
+    const task = kwargs['task'];
+    let message;
+    switch (actionType) {
+      case LogActions.ADDED_TASK_TO_TODO:
+        // TODO: format message (colours, etc.)
+        message = "Added task " + task['title'] + " to To-do";
+        break;
+      case LogActions.ADDED_TASK_TO_DOING:
+        message = "Added task " + task['title'] + " to Doing";
+        break;
+      case LogActions.ADDED_TASK_TO_DONE:
+        message = "Added task " + task['title'] + " to Done";
+        break;
+      case LogActions.MOVED_TASK_TO_TODO:
+        // TODO
+        break;
+      case LogActions.MOVED_TASK_TO_DOING:
+        // TODO
+        break;
+      case LogActions.MOVED_TASK_TO_DONE:
+        // TODO
+        break;
+    }
+    const logItem = new KanbanLogItem(actionType, message);
+    this.setState({
+      logItems: [logItem].concat(this.state.logItems)
+    });
   }
 
   renderTodoColumn() {
@@ -86,6 +131,12 @@ class KanbanBoard extends Component {
     );
   }
 
+  renderLog() {
+    return (
+      <KanbanLog items={this.state.logItems}/>
+    )
+  }
+
   render() {
     return (
       <div className="kanban-board">
@@ -100,6 +151,9 @@ class KanbanBoard extends Component {
             {this.renderDoneColumn()}
           </div>
         </div>
+        <div className="kanban-log-container">
+          {this.renderLog()}
+        </div>
       </div>
     );
   }
@@ -111,7 +165,7 @@ class KanbanColumn extends Component {
     for (let task of this.props.tasks) {
       taskCards.push(
         <nav className="level" key={task}>
-          <KanbanTaskCard title={task.title} dueDate={task.dueDate} />
+          <KanbanTaskCard title={task.title} dueDate={task.dueDate}/>
         </nav>);
     }
 
@@ -146,7 +200,8 @@ class KanbanTaskCard extends Component {
 
   render() {
     return (
-      <div className="kanban-task-card box is-fullwidth">
+      <div className="kanban-task-card box is-fullwidth tooltip is-tooltip-info"
+           data-tooltip="Drag me!">
         <h5 className="title is-5">
           <RIEInput className="title is-5"
                     value={this.state.title}
@@ -154,9 +209,37 @@ class KanbanTaskCard extends Component {
                     propName="title"/>
         </h5>
         <h6 className="subtitle is-6">{this.props.dueDate}</h6>
-
       </div>
     )
+  }
+}
+
+class KanbanLog extends Component {
+  render() {
+    const rows = [];
+    for (let item of this.props.items) {
+      rows.push(
+        <tr>
+          <th>{item.timestamp}</th>
+          <td>{item.message}</td>
+        </tr>
+      )
+    }
+    return (
+      <table className="kanban-log table is-narrow is-hoverable">
+        <tbody>
+        {rows}
+        </tbody>
+      </table>
+    )
+  }
+}
+
+class KanbanLogItem {
+  constructor(actionType, message, timestamp = new Date().toLocaleString()) {
+    this.actionType = actionType;
+    this.message = message;
+    this.timestamp = timestamp;
   }
 }
 
