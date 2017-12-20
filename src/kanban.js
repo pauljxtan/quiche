@@ -89,13 +89,13 @@ class KanbanBoard extends Component {
     switch (actionType) {
       case LogActions.ADDED_TASK_TO_TODO:
         // TODO: format message (colours, etc.)
-        message = "Added task " + task['title'] + " to To-do";
+        message = 'Added task <b>' + task['title'] + '</b> to <b class="colour-text-todo">To-do</b>';
         break;
       case LogActions.ADDED_TASK_TO_DOING:
-        message = "Added task " + task['title'] + " to Doing";
+        message = 'Added task <b>' + task['title'] + '</b> to <b class="colour-text-doing">Doing</b>';
         break;
       case LogActions.ADDED_TASK_TO_DONE:
-        message = "Added task " + task['title'] + " to Done";
+        message = 'Added task <b>' + task['title'] + '</b> to <b class="colour-text-done">Done</b>';
         break;
       case LogActions.MOVED_TASK_TO_TODO:
         // TODO
@@ -107,7 +107,7 @@ class KanbanBoard extends Component {
         // TODO
         break;
       case LogActions.CLEARED_ALL_TASKS:
-        message = "Cleared all tasks";
+        message = 'Cleared all tasks';
         break;
     }
     const logItem = new KanbanLogItem(actionType, message);
@@ -240,7 +240,7 @@ class KanbanLog extends Component {
         {this.props.items.map(item =>
           <tr>
             <th>{item.timestamp}</th>
-            <td>{item.message}</td>
+            <td dangerouslySetInnerHTML={{__html: item.message}} />
           </tr>
         )}
         </tbody>

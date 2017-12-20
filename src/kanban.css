@@ -1,3 +1,15 @@
+:root {
+  --colour-todo-light: rgb(225, 247, 213);
+  --colour-todo-medium: rgb(169, 185, 160);
+  --colour-todo-dark: rgb(113, 124, 107);
+  --colour-doing-light: rgb(201, 201, 255);
+  --colour-doing-medium: rgb(151, 151, 191);
+  --colour-done-medium: rgb(181, 152, 191);
+  --colour-done-light: rgb(241, 203, 255);
+  --colour-doing-dark: rgb(101, 101, 128);
+  --colour-done-dark: rgb(121, 102, 128);
+}
+
 .kanban-board {
   text-align: center;
 }
@@ -20,27 +32,36 @@
   width: 100%;
 }
 .kanban-column-todo {
-  background: rgb(225, 247, 213);
+  background: var(--colour-todo-light);
 }
 .kanban-column-todo .kanban-task-card .title,
 .kanban-column-todo .kanban-task-card .subtitle {
-  color: rgb(113, 124, 107);
+  color: var(--colour-todo-dark);
 }
 .kanban-column-doing {
-  background: rgb(201, 201, 255);
+  background: var(--colour-doing-light);
 }
 .kanban-column-doing .kanban-task-card .title,
 .kanban-column-doing .kanban-task-card .subtitle
 {
-  color: rgb(101, 101, 128);
+  color: var(--colour-doing-dark);
 }
 .kanban-column-done {
-  background: rgb(241, 203, 255);
+  background: var(--colour-done-light);
 }
 .kanban-column-done .kanban-task-card .title,
 .kanban-column-done .kanban-task-card .subtitle
 {
-  color: rgb(121, 102, 128);
+  color: var(--colour-done-dark);
+}
+.colour-text-todo {
+  color: var(--colour-todo-dark);
+}
+.colour-text-doing {
+  color: var(--colour-doing-dark);
+}
+.colour-text-done {
+  color: var(--colour-done-dark);
 }
 
 
@@ -51,9 +72,12 @@ Light pastels:
   *0.50: (113,124,107)
 #ffbdbd	(255,189,189)
 #c9c9ff	(201,201,255)
+  *0.75: (151,151,191)
   *0.50: (101,101,128)
 #ffffff	(255,255,255)
 #f1cbff	(241,203,255)
+  *0.75: (181,152,191)
+  *0.50: (121,102,128);
 
 Middle-ish pastels:
 #e3b2b2	(227,178,178)
