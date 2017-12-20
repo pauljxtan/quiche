@@ -63,6 +63,18 @@
 .colour-text-done {
   color: var(--colour-done-dark);
 }
+input.kanban-class-title {
+  text-align: center;
+}
+.kanban-task-card-due-date > div {
+  display: inline-block;
+}
+.kanban-task-card-due-date > label {
+  vertical-align: middle;
+}
+.kanban-task-datepicker {
+  width: 79px !important;
+}
 
 
 /*

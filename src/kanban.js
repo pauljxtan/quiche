@@ -4,18 +4,26 @@ import dragula from 'react-dragula';
 import {RIEInput} from 'riek';
 import {instanceOf} from 'prop-types';
 import {withCookies, Cookies} from 'react-cookie';
+// import 'bulma-extensions/bulma-calendar/datepicker';
+// import DatePicker from './datepicker_custom';
+import DatePicker from 'react-datepicker';
+import moment from 'moment';
 
 import 'react-dragula/dist/dragula.min.css';
 import 'bulma-extensions/bulma-tooltip/bulma-tooltip.min.css';
+import 'bulma-extensions/bulma-calendar/bulma-calendar.min.css';
+import 'font-awesome/css/font-awesome.min.css';
+import 'react-datepicker/dist/react-datepicker.min.css';
 import './kanban.css';
 
 /*
 TODO:
--- Refactor simple components to functional definition
+-- Fix the "same key" issue
+-- Get the cookies actually working
  */
 
 const drake = dragula(
-  {} // TODO: Log task moves
+  {} // TODO: Log task moves, update board state, etc.
 );
 
 const LogActions = Object.freeze({
@@ -109,6 +117,8 @@ class KanbanBoard extends Component {
       case LogActions.CLEARED_ALL_TASKS:
         message = 'Cleared all tasks';
         break;
+      default:
+        return;
     }
     const logItem = new KanbanLogItem(actionType, message);
     this.setState({
@@ -203,12 +213,19 @@ class KanbanTaskCard extends Component {
     super(props);
     this.state = {
       title: props.title,
-      dueDate: props.dueDate,
+      // dueDate: props.dueDate,
+      dueDate: moment()
     };
+    this.titleChanged = this.titleChanged.bind(this);
+    this.dateChanged = this.dateChanged.bind(this);
   }
 
-  update(prop) {
-    this.setState(prop);
+  titleChanged(props) {
+    if (props.title !== "") this.setState(props);
+  }
+
+  dateChanged(date) {
+    this.setState({dueDate: date});
   }
 
   render() {
@@ -216,38 +233,41 @@ class KanbanTaskCard extends Component {
       <div className="kanban-task-card box is-fullwidth tooltip is-tooltip-info"
            data-tooltip="Drag me!">
         <h5 className="title is-5">
-          <RIEInput className="title is-5"
+          <RIEInput className="kanban-task-title title is-5"
+                    classEditing="input is-small has-text-centered"
                     value={this.state.title}
-                    change={this.update.bind(this)}
+                    change={this.titleChanged}
                     propName="title"/>
+          {/*&nbsp;*/}
+          {/*<span className="icon">*/}
+          {/*<i className="fa fa-pencil"></i>*/}
+          {/*</span>*/}
         </h5>
-        <h6 className="subtitle is-6">{this.props.dueDate}</h6>
+        <h6 className="kanban-task-card-due-date subtitle is-6">
+          <label>Due:</label> <DatePicker className="kanban-task-datepicker input is-small"
+                                          selected={this.state.dueDate}
+                                          onChange={this.dateChanged.bind(this)}
+        dateFormat="YYYY-MM-DD"/>
+        </h6>
       </div>
     )
   }
 }
 
-class KanbanLog extends Component {
-  render() {
-    const rows = [];
-    for (let item of this.props.items) {
-      rows.push(
-      )
-    }
-    return (
-      <table className="kanban-log table is-narrow is-hoverable">
-        <tbody>
-        {this.props.items.map(item =>
-          <tr>
-            <th>{item.timestamp}</th>
-            <td dangerouslySetInnerHTML={{__html: item.message}} />
-          </tr>
-        )}
-        </tbody>
-      </table>
-    )
-  }
-}
+const KanbanLog = function (props) {
+  return (
+    <table className="kanban-log table is-narrow is-hoverable">
+      <tbody>
+      {props.items.map(item =>
+        <tr>
+          <th>{item.timestamp}</th>
+          <td dangerouslySetInnerHTML={{__html: item.message}}/>
+        </tr>
+      )}
+      </tbody>
+    </table>
+  );
+};
 
 class KanbanLogItem {
   constructor(actionType, message, timestamp = new Date().toLocaleString()) {
