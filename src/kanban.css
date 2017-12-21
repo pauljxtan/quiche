@@ -43,20 +43,27 @@
 .kanban-column-todo {
   background: var(--colour-todo-light);
 }
-.kanban-column-todo .kanban-task-title {
+.kanban-column-todo .kanban-task-title,
+.kanban-column-todo .kanban-task-description {
   color: var(--colour-todo-dark);
 }
 .kanban-column-doing {
   background: var(--colour-doing-light);
 }
-.kanban-column-doing .kanban-task-title {
+.kanban-column-doing .kanban-task-title,
+.kanban-column-doing .kanban-task-description {
   color: var(--colour-doing-dark);
 }
 .kanban-column-done {
   background: var(--colour-done-light);
 }
-.kanban-column-done .kanban-task-title {
+.kanban-column-done .kanban-task-title,
+.kanban-column-done .kanban-task-description {
   color: var(--colour-done-dark);
+}
+.kanban-task-counter {
+  border-radius: 50% !important;
+  /*vertical-align: text-bottom !important;*/
 }
 .colour-text-todo {
   color: var(--colour-todo-dark);
@@ -67,6 +74,8 @@
 .colour-text-done {
   color: var(--colour-done-dark);
 }
+/*.dragging {*/
+/*}*/
 
 
 /*

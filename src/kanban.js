@@ -22,9 +22,14 @@ TODO:
 -- Get the cookies actually working
  */
 
-const drake = dragula(
-  {} // TODO: Log task moves, update board state, etc.
-);
+const drake = dragula([], {
+   isContainer: function(el) {
+     return el.classList.contains('kanban-task-cards');
+   },
+})
+  .on('drop', function(el) {
+
+  });
 
 const LogActions = Object.freeze({
   ADDED_TASK_TO_TODO: 0,
@@ -186,14 +191,17 @@ class KanbanBoard extends Component {
   }
 }
 
-class KanbanColumn extends Component {
-  render() {
+const KanbanColumn = function(props) {
     return (
       <div className="kanban-column column">
-        <h3 className="kanban-column-title title is-3">{this.props.title}</h3>
-        <button className="kanban-add-task button" onClick={() => this.props.addTaskCallback()}>+</button>
-        <div className="kanban-task-cards" ref="cardContainer">
-          {this.props.tasks.map(task =>
+        <h3 className="kanban-column-title title is-3">
+          {props.title}
+        </h3>
+        &nbsp;&nbsp;
+        <a className="kanban-task-counter button is-static is-small">{props.tasks.length}</a>
+        <button className="kanban-add-task button" onClick={() => props.addTaskCallback()}>+</button>
+        <div className="kanban-task-cards">
+          {props.tasks.map(task =>
             <nav className="level" key={task}>
               <KanbanTaskCard title={task.title} dueDate={task.dueDate}/>
             </nav>
@@ -201,12 +209,7 @@ class KanbanColumn extends Component {
         </div>
       </div>
     );
-  }
-
-  componentDidMount() {
-    drake.containers.push(ReactDOM.findDOMNode(this.refs.cardContainer));
-  }
-}
+};
 
 class KanbanTaskCard extends Component {
   constructor(props) {
@@ -251,10 +254,10 @@ class KanbanTaskCard extends Component {
         <div className="card-content">
           <div className="content">
             <RIETextArea className="kanban-task-description"
-                      classEditing="kanban-task-description-editing textarea"
-                      value={this.state.description}
-                      change={this.descriptionChanged}
-                      propName="description"/>
+                         classEditing="kanban-task-description-editing textarea"
+                         value={this.state.description}
+                         change={this.descriptionChanged}
+                         propName="description"/>
 
             <div className="kanban-task-duedate field has-addons">
               <p className="control">
