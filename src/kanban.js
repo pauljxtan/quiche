@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
-import ReactDOM from 'react-dom';
-import dragula from 'react-dragula';
+// import ReactDOM from 'react-dom';
+import Dragula from 'react-dragula';
 import {RIEInput, RIETextArea} from 'riek';
 import {instanceOf} from 'prop-types';
 import {withCookies, Cookies} from 'react-cookie';
@@ -18,18 +18,9 @@ import './kanban.css';
 
 /*
 TODO:
--- Fix the "same key" issue
 -- Get the cookies actually working
+-- Responsive multiple cards per level
  */
-
-const drake = dragula([], {
-   isContainer: function(el) {
-     return el.classList.contains('kanban-task-cards');
-   },
-})
-  .on('drop', function(el) {
-
-  });
 
 const LogActions = Object.freeze({
   ADDED_TASK_TO_TODO: 0,
@@ -49,6 +40,8 @@ class KanbanBoard extends Component {
   constructor(props) {
     super(props);
     const {cookies} = this.props;
+    this.taskCounter = 0;
+    this.logCounter = 0;
     this.state = {
       tasks: cookies.get('tasks') || {'todo': [], 'doing': [], 'done': []},
       logItems: []
@@ -56,10 +49,8 @@ class KanbanBoard extends Component {
   }
 
   addTask(column) {
-    const task = {
-      title: 'Untitled',
-      dueDate: 'Anytime'
-    };
+    // TODO: wrap this in a class
+    const task = new KanbanTask('Untitled', new Date(), ++this.taskCounter);
     const prevTodo = this.state.tasks['todo'];
     const prevDoing = this.state.tasks['doing'];
     const prevDone = this.state.tasks['done'];
@@ -125,7 +116,7 @@ class KanbanBoard extends Component {
       default:
         return;
     }
-    const logItem = new KanbanLogItem(actionType, message);
+    const logItem = new KanbanLogItem(actionType, message, ++this.logCounter);
     this.setState({
       logItems: [logItem].concat(this.state.logItems)
     });
@@ -134,6 +125,7 @@ class KanbanBoard extends Component {
   renderTodoColumn() {
     return (
       <KanbanColumn title="To-do"
+                    phase="todo"
                     tasks={this.state.tasks['todo']}
                     addTaskCallback={() => this.addTask('todo')}
       />
@@ -143,6 +135,7 @@ class KanbanBoard extends Component {
   renderDoingColumn() {
     return (
       <KanbanColumn title="Doing"
+                    phase="doing"
                     tasks={this.state.tasks['doing']}
                     addTaskCallback={() => this.addTask('doing')}
       />
@@ -152,6 +145,7 @@ class KanbanBoard extends Component {
   renderDoneColumn() {
     return (
       <KanbanColumn title="Done"
+                    phase="done"
                     tasks={this.state.tasks['done']}
                     addTaskCallback={() => this.addTask('done')}
       />
@@ -166,7 +160,7 @@ class KanbanBoard extends Component {
 
   render() {
     return (
-      <div className="kanban-board container">
+      <div className="kanban-board container" ref={this.dragulaDecorator}>
         <div className="columns">
           <div className="kanban-column-todo column is-third">
             {this.renderTodoColumn()}
@@ -189,26 +183,42 @@ class KanbanBoard extends Component {
       </div>
     );
   }
+
+  dragulaDecorator() {
+    Dragula([], {
+      isContainer: function (el) {
+        return el.classList.contains('kanban-task-cards');
+      },
+    })
+      .on('drop', function (el, target, source) {
+        // Remove task from source
+        if (source.classList.contains('kanban-task-cards-todo')) {
+          console.log(el);
+
+        }
+        // Add task to target
+      });
+  }
 }
 
-const KanbanColumn = function(props) {
-    return (
-      <div className="kanban-column column">
-        <h3 className="kanban-column-title title is-3">
-          {props.title}
-        </h3>
-        &nbsp;&nbsp;
-        <a className="kanban-task-counter button is-static is-small">{props.tasks.length}</a>
-        <button className="kanban-add-task button" onClick={() => props.addTaskCallback()}>+</button>
-        <div className="kanban-task-cards">
-          {props.tasks.map(task =>
-            <nav className="level" key={task}>
-              <KanbanTaskCard title={task.title} dueDate={task.dueDate}/>
-            </nav>
-          )}
-        </div>
+const KanbanColumn = function (props) {
+  return (
+    <div className="kanban-column column">
+      <h3 className="kanban-column-title title is-3">
+        {props.title}
+      </h3>
+      &nbsp;&nbsp;
+      <a className="kanban-task-counter button is-static is-small">{props.tasks.length}</a>
+      <button className="kanban-add-task button" onClick={() => props.addTaskCallback()}>+</button>
+      <div className={"kanban-task-cards kanban-task-cards-" + props.phase}>
+        {props.tasks.map(task =>
+          <nav className="level" key={task}>
+            <KanbanTaskCard title={task.title} dueDate={task.dueDate}/>
+          </nav>
+        )}
       </div>
-    );
+    </div>
+  );
 };
 
 class KanbanTaskCard extends Component {
@@ -219,7 +229,8 @@ class KanbanTaskCard extends Component {
       // dueDate: props.dueDate,
       dueDate: moment(),
       // TODO: placeholder for now
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      timeCreated: new Date(),
     };
     this.titleChanged = this.titleChanged.bind(this);
     this.descriptionChanged = this.descriptionChanged.bind(this);
@@ -263,40 +274,41 @@ class KanbanTaskCard extends Component {
               <p className="control">
                 <a className="button is-static">Due on</a>
               </p>
-              <p className="control">
+              <div className="control">
                 <DatePicker className="kanban-task-datepicker input"
                             selected={this.state.dueDate}
                             onChange={this.dateChanged}
                             dateFormat="MMM DD, YYYY"/>
-              </p>
+              </div>
             </div>
           </div>
         </div>
-        <footer className="card-footer">
-          <a href="#" className="card-footer-item has-text-primary">
-            <span className="icon">
-              <i className="fa fa-edit">&nbsp;</i>
-            </span>
-            Edit
-          </a>
-          <a href="#" className="card-footer-item has-text-danger">
-            <span className="icon">
-              <i className="fa fa-trash">&nbsp;</i>
-            </span>
-            Delete
-          </a>
-        </footer>
+        {/*<footer className="card-footer">*/}
+          {/*<a href="#" className="card-footer-item has-text-primary">*/}
+            {/*<span className="icon">*/}
+              {/*<i className="fa fa-edit">&nbsp;</i>*/}
+            {/*</span>*/}
+            {/*Edit*/}
+          {/*</a>*/}
+          {/*<a href="#" className="card-footer-item has-text-danger">*/}
+            {/*<span className="icon">*/}
+              {/*<i className="fa fa-trash">&nbsp;</i>*/}
+            {/*</span>*/}
+            {/*Delete*/}
+          {/*</a>*/}
+        {/*</footer>*/}
       </div>
     )
   }
 }
+
 
 const KanbanLog = function (props) {
   return (
     <table className="kanban-log table is-narrow is-hoverable">
       <tbody>
       {props.items.map(item =>
-        <tr>
+        <tr key={item}>
           <th>{item.timestamp}</th>
           <td dangerouslySetInnerHTML={{__html: item.message}}/>
         </tr>
@@ -306,11 +318,28 @@ const KanbanLog = function (props) {
   );
 };
 
+class KanbanTask {
+  constructor(title, dueDate, id) {
+    this.title = title;
+    this.dueDate = dueDate;
+    this.id = id;
+  }
+
+  toString() {
+    return "[KanbanTask_" + this.id + "]";
+  }
+}
+
 class KanbanLogItem {
-  constructor(actionType, message, timestamp = new Date().toLocaleString()) {
+  constructor(actionType, message, id) {
     this.actionType = actionType;
     this.message = message;
-    this.timestamp = timestamp;
+    this.id = id;
+    this.timestamp = new Date().toLocaleString();
+  }
+
+  toString() {
+    return "[KanbanLogItem_" + this.id + "]";
   }
 }
 
