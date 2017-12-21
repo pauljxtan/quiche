@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 import dragula from 'react-dragula';
-import {RIEInput} from 'riek';
+import {RIEInput, RIETextArea} from 'riek';
 import {instanceOf} from 'prop-types';
 import {withCookies, Cookies} from 'react-cookie';
 // import 'bulma-extensions/bulma-calendar/datepicker';
@@ -11,7 +11,7 @@ import moment from 'moment';
 
 import 'react-dragula/dist/dragula.min.css';
 import 'bulma-extensions/bulma-tooltip/bulma-tooltip.min.css';
-import 'bulma-extensions/bulma-calendar/bulma-calendar.min.css';
+// import 'bulma-extensions/bulma-calendar/bulma-calendar.min.css';
 import 'font-awesome/css/font-awesome.min.css';
 import 'react-datepicker/dist/react-datepicker.min.css';
 import './kanban.css';
@@ -214,14 +214,21 @@ class KanbanTaskCard extends Component {
     this.state = {
       title: props.title,
       // dueDate: props.dueDate,
-      dueDate: moment()
+      dueDate: moment(),
+      // TODO: placeholder for now
+      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
     };
     this.titleChanged = this.titleChanged.bind(this);
+    this.descriptionChanged = this.descriptionChanged.bind(this);
     this.dateChanged = this.dateChanged.bind(this);
   }
 
   titleChanged(props) {
     if (props.title !== "") this.setState(props);
+  }
+
+  descriptionChanged(props) {
+    if (props.description !== "") this.setState(props);
   }
 
   dateChanged(date) {
@@ -230,25 +237,52 @@ class KanbanTaskCard extends Component {
 
   render() {
     return (
-      <div className="kanban-task-card box is-fullwidth tooltip is-tooltip-info"
+      <div className="kanban-task-card card is-fullwidth tooltip is-tooltip-info"
            data-tooltip="Drag me!">
-        <h5 className="title is-5">
-          <RIEInput className="kanban-task-title title is-5"
-                    classEditing="input is-small has-text-centered"
-                    value={this.state.title}
-                    change={this.titleChanged}
-                    propName="title"/>
-          {/*&nbsp;*/}
-          {/*<span className="icon">*/}
-          {/*<i className="fa fa-pencil"></i>*/}
-          {/*</span>*/}
-        </h5>
-        <h6 className="kanban-task-card-due-date subtitle is-6">
-          <label>Due:</label> <DatePicker className="kanban-task-datepicker input is-small"
-                                          selected={this.state.dueDate}
-                                          onChange={this.dateChanged.bind(this)}
-        dateFormat="YYYY-MM-DD"/>
-        </h6>
+        <div className="card-header">
+          <div className="card-header-title title is-5">
+            <RIEInput className="kanban-task-title"
+                      classEditing="kanban-task-title-editing input"
+                      value={this.state.title}
+                      change={this.titleChanged}
+                      propName="title"/>
+          </div>
+        </div>
+        <div className="card-content">
+          <div className="content">
+            <RIETextArea className="kanban-task-description"
+                      classEditing="kanban-task-description-editing textarea"
+                      value={this.state.description}
+                      change={this.descriptionChanged}
+                      propName="description"/>
+
+            <div className="kanban-task-duedate field has-addons">
+              <p className="control">
+                <a className="button is-static">Due on</a>
+              </p>
+              <p className="control">
+                <DatePicker className="kanban-task-datepicker input"
+                            selected={this.state.dueDate}
+                            onChange={this.dateChanged}
+                            dateFormat="MMM DD, YYYY"/>
+              </p>
+            </div>
+          </div>
+        </div>
+        <footer className="card-footer">
+          <a href="#" className="card-footer-item has-text-primary">
+            <span className="icon">
+              <i className="fa fa-edit">&nbsp;</i>
+            </span>
+            Edit
+          </a>
+          <a href="#" className="card-footer-item has-text-danger">
+            <span className="icon">
+              <i className="fa fa-trash">&nbsp;</i>
+            </span>
+            Delete
+          </a>
+        </footer>
       </div>
     )
   }

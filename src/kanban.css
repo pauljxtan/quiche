@@ -28,30 +28,34 @@
   margin: 5px !important;
 }
 .kanban-task-card {
-  cursor: pointer;
+  /*cursor: pointer;*/
   width: 100%;
+}
+.kanban-task-card .card-content {
+  padding: 0.5rem 0.5rem 0 0.5rem;
+}
+.kanban-task-description {
+  text-align: left;
+}
+.kanban-task-duedate {
+  padding: 0.5rem 0.5rem 0 0.5rem;
 }
 .kanban-column-todo {
   background: var(--colour-todo-light);
 }
-.kanban-column-todo .kanban-task-card .title,
-.kanban-column-todo .kanban-task-card .subtitle {
+.kanban-column-todo .kanban-task-title {
   color: var(--colour-todo-dark);
 }
 .kanban-column-doing {
   background: var(--colour-doing-light);
 }
-.kanban-column-doing .kanban-task-card .title,
-.kanban-column-doing .kanban-task-card .subtitle
-{
+.kanban-column-doing .kanban-task-title {
   color: var(--colour-doing-dark);
 }
 .kanban-column-done {
   background: var(--colour-done-light);
 }
-.kanban-column-done .kanban-task-card .title,
-.kanban-column-done .kanban-task-card .subtitle
-{
+.kanban-column-done .kanban-task-title {
   color: var(--colour-done-dark);
 }
 .colour-text-todo {
@@ -62,18 +66,6 @@
 }
 .colour-text-done {
   color: var(--colour-done-dark);
-}
-input.kanban-class-title {
-  text-align: center;
-}
-.kanban-task-card-due-date > div {
-  display: inline-block;
-}
-.kanban-task-card-due-date > label {
-  vertical-align: middle;
-}
-.kanban-task-datepicker {
-  width: 79px !important;
 }
 
 
