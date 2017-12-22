@@ -10,6 +10,13 @@
   --colour-done-dark: rgb(121, 102, 128);
 }
 
+.section {
+  padding: 1rem 1.5rem !important;
+}
+.hero-body {
+  padding: 0 0 !important;
+}
+
 .kanban-board {
   text-align: center;
 }

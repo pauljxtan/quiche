@@ -92,14 +92,16 @@ class KanbanBoard extends Component {
     let message;
     switch (actionType) {
       case LogActions.ADDED_TASK_TO_TODO:
-        // TODO: format message (colours, etc.)
-        message = 'Added task <b>' + task['title'] + '</b> to <b class="colour-text-todo">To-do</b>';
+        message = 'Added task <b>' + task['title'] + '</b> to <b class="colour-text-todo">To-do</b>'
+        message += ' (due: <b>' + task['dueDate'].format("MMM DD, YYYY") + '</b>)';
         break;
       case LogActions.ADDED_TASK_TO_DOING:
         message = 'Added task <b>' + task['title'] + '</b> to <b class="colour-text-doing">Doing</b>';
+        message += ' (due: <b>' + task['dueDate'].format("MMM DD, YYYY") + '</b>)';
         break;
       case LogActions.ADDED_TASK_TO_DONE:
         message = 'Added task <b>' + task['title'] + '</b> to <b class="colour-text-done">Done</b>';
+        message += ' (due: <b>' + task['dueDate'].format("MMM DD, YYYY") + '</b>)';
         break;
       case LogActions.MOVED_TASK_TO_TODO:
         // TODO
@@ -160,26 +162,44 @@ class KanbanBoard extends Component {
 
   render() {
     return (
-      <div className="kanban-board container" ref={this.dragulaDecorator}>
-        <div className="columns">
-          <div className="kanban-column-todo column is-third">
-            {this.renderTodoColumn()}
+      <div className="kanban-board container">
+        <section className="kanban-title hero section">
+          <div className="hero-body">
+            <div className="container">
+              <h1 className="title">
+                A Kanban board
+              </h1>
+              <h2 className="subtitle">
+                <i className="fa fa-info-circle">&nbsp;</i>
+                Drag and drop tasks between columns.
+                Click on a title, description or due date to edit.
+              </h2>
+            </div>
           </div>
-          <div className="kanban-column-doing column is-third">
-            {this.renderDoingColumn()}
+        </section>
+        <section className="kanban-columns section" ref={this.dragulaDecorator}>
+          <div className="columns">
+            <div className="kanban-column-todo column is-third">
+              {this.renderTodoColumn()}
+            </div>
+            <div className="kanban-column-doing column is-third">
+              {this.renderDoingColumn()}
+            </div>
+            <div className="kanban-column-done column">
+              {this.renderDoneColumn()}
+            </div>
           </div>
-          <div className="kanban-column-done column">
-            {this.renderDoneColumn()}
+        </section>
+        <section className="kanban-meta section">
+          <div className="columns">
+            <div className="kanban-log-container column is-two-thirds">
+              {this.renderLog()}
+            </div>
+            <div className="kanban-stats-container column">
+              <a className="button" onClick={() => this.clearAllTasks()}>Clear all tasks</a>
+            </div>
           </div>
-        </div>
-        <div className="columns">
-          <div className="kanban-log-container column is-two-thirds">
-            {this.renderLog()}
-          </div>
-          <div className="kanban-stats-container column">
-            <a className="button" onClick={() => this.clearAllTasks()}>Clear all tasks</a>
-          </div>
-        </div>
+        </section>
       </div>
     );
   }
@@ -284,18 +304,18 @@ class KanbanTaskCard extends Component {
           </div>
         </div>
         {/*<footer className="card-footer">*/}
-          {/*<a href="#" className="card-footer-item has-text-primary">*/}
-            {/*<span className="icon">*/}
-              {/*<i className="fa fa-edit">&nbsp;</i>*/}
-            {/*</span>*/}
-            {/*Edit*/}
-          {/*</a>*/}
-          {/*<a href="#" className="card-footer-item has-text-danger">*/}
-            {/*<span className="icon">*/}
-              {/*<i className="fa fa-trash">&nbsp;</i>*/}
-            {/*</span>*/}
-            {/*Delete*/}
-          {/*</a>*/}
+        {/*<a href="#" className="card-footer-item has-text-primary">*/}
+        {/*<span className="icon">*/}
+        {/*<i className="fa fa-edit">&nbsp;</i>*/}
+        {/*</span>*/}
+        {/*Edit*/}
+        {/*</a>*/}
+        {/*<a href="#" className="card-footer-item has-text-danger">*/}
+        {/*<span className="icon">*/}
+        {/*<i className="fa fa-trash">&nbsp;</i>*/}
+        {/*</span>*/}
+        {/*Delete*/}
+        {/*</a>*/}
         {/*</footer>*/}
       </div>
     )
@@ -321,7 +341,7 @@ const KanbanLog = function (props) {
 class KanbanTask {
   constructor(title, dueDate, id) {
     this.title = title;
-    this.dueDate = dueDate;
+    this.dueDate = moment(dueDate);
     this.id = id;
   }
 
