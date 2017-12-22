@@ -1,17 +1,13 @@
 import React, {Component} from 'react';
-// import ReactDOM from 'react-dom';
 import Dragula from 'react-dragula';
 import {RIEInput, RIETextArea} from 'riek';
 import {instanceOf} from 'prop-types';
 import {withCookies, Cookies} from 'react-cookie';
-// import 'bulma-extensions/bulma-calendar/datepicker';
-// import DatePicker from './datepicker_custom';
 import DatePicker from 'react-datepicker';
 import moment from 'moment';
 
 import 'react-dragula/dist/dragula.min.css';
 import 'bulma-extensions/bulma-tooltip/bulma-tooltip.min.css';
-// import 'bulma-extensions/bulma-calendar/bulma-calendar.min.css';
 import 'font-awesome/css/font-awesome.min.css';
 import 'react-datepicker/dist/react-datepicker.min.css';
 import './kanban.css';
@@ -43,35 +39,29 @@ class KanbanBoard extends Component {
     this.taskCounter = 0;
     this.logCounter = 0;
     this.state = {
-      tasks: cookies.get('tasks') || {'todo': [], 'doing': [], 'done': []},
+      tasks: cookies.get('tasks') || [],
       logItems: []
     };
   }
 
   addTask(column) {
-    // TODO: wrap this in a class
     const task = new KanbanTask('Untitled', new Date(), ++this.taskCounter);
-    const prevTodo = this.state.tasks['todo'];
-    const prevDoing = this.state.tasks['doing'];
-    const prevDone = this.state.tasks['done'];
+    this.setState({
+      tasks: this.state.tasks.concat([{'phase': column, 'task': task}])
+    });
+    this.logAddTask(column, task);
+  }
 
+  // Helper function for logging task additions
+  logAddTask(column, task) {
     switch (column) {
       case 'todo':
-        this.setState({
-          tasks: {'todo': prevTodo.concat([task]), 'doing': prevDoing, 'done': prevDone}
-        });
         this.logAction(LogActions.ADDED_TASK_TO_TODO, {'task': task});
         break;
       case 'doing':
-        this.setState({
-          tasks: {'todo': prevTodo, 'doing': prevDoing.concat([task]), 'done': prevDone}
-        });
         this.logAction(LogActions.ADDED_TASK_TO_DOING, {'task': task});
         break;
       case 'done':
-        this.setState({
-          tasks: {'todo': prevTodo, 'doing': prevDoing, 'done': prevDone.concat([task])}
-        });
         this.logAction(LogActions.ADDED_TASK_TO_DONE, {'task': task});
         break;
       default:
@@ -79,10 +69,17 @@ class KanbanBoard extends Component {
     }
   }
 
+  moveTask(taskId, fromCol, toCol) {
+    // task = this.state.tasks[fromCol].find(task => task.id === taskId);
+    // const newFromCol = this.state.tasks[fromCol].filter(task => task.id !== taskId);
+    // const newToCol = this.state.tasks[toCol].concat([task]);
+    // this.setState({
+    //   tasks: {
+    // })
+  }
+
   clearAllTasks() {
-    this.setState({
-      tasks: {'todo': [], 'doing': [], 'done': []}
-    });
+    this.setState({tasks: []});
     this.logAction(LogActions.CLEARED_ALL_TASKS);
   }
 
@@ -128,7 +125,7 @@ class KanbanBoard extends Component {
     return (
       <KanbanColumn title="To-do"
                     phase="todo"
-                    tasks={this.state.tasks['todo']}
+                    tasks={this.state.tasks.filter(task => task.phase === 'todo').map(task => task.task)}
                     addTaskCallback={() => this.addTask('todo')}
       />
     );
@@ -138,7 +135,7 @@ class KanbanBoard extends Component {
     return (
       <KanbanColumn title="Doing"
                     phase="doing"
-                    tasks={this.state.tasks['doing']}
+                    tasks={this.state.tasks.filter(task => task.phase === 'doing').map(task => task.task)}
                     addTaskCallback={() => this.addTask('doing')}
       />
     );
@@ -148,7 +145,7 @@ class KanbanBoard extends Component {
     return (
       <KanbanColumn title="Done"
                     phase="done"
-                    tasks={this.state.tasks['done']}
+                    tasks={this.state.tasks.filter(task => task.phase === 'done').map(task => task.task)}
                     addTaskCallback={() => this.addTask('done')}
       />
     );
@@ -211,12 +208,9 @@ class KanbanBoard extends Component {
       },
     })
       .on('drop', function (el, target, source) {
-        // Remove task from source
-        if (source.classList.contains('kanban-task-cards-todo')) {
-          console.log(el);
-
-        }
-        // Add task to target
+        // Move task from source column to target column
+        // Container IDs are 'kanban-task-cards-doing', etc.
+        this.moveTask(el.id, target.id.split('-').slice(-1)[0], source.id.split('-').slice(-1)[0]);
       });
   }
 }
@@ -230,10 +224,10 @@ const KanbanColumn = function (props) {
       &nbsp;&nbsp;
       <a className="kanban-task-counter button is-static is-small">{props.tasks.length}</a>
       <button className="kanban-add-task button" onClick={() => props.addTaskCallback()}>+</button>
-      <div className={"kanban-task-cards kanban-task-cards-" + props.phase}>
+      <div className="kanban-task-cards" id={"kanban-task-cards-" + props.phase}>
         {props.tasks.map(task =>
           <nav className="level" key={task}>
-            <KanbanTaskCard title={task.title} dueDate={task.dueDate}/>
+            <KanbanTaskCard title={task.title} dueDate={task.dueDate} id={task.id}/>
           </nav>
         )}
       </div>
@@ -272,7 +266,7 @@ class KanbanTaskCard extends Component {
   render() {
     return (
       <div className="kanban-task-card card is-fullwidth tooltip is-tooltip-info"
-           data-tooltip="Drag me!">
+           id={"kanban-task-card-" + this.props.id} data-tooltip="Drag me!">
         <div className="card-header">
           <div className="card-header-title title is-5">
             <RIEInput className="kanban-task-title"
