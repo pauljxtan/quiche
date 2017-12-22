@@ -28,6 +28,12 @@ const LogActions = Object.freeze({
   CLEARED_ALL_TASKS: 6,
 });
 
+const drake = Dragula([], {
+  isContainer: function (el) {
+    return el.classList.contains('kanban-task-cards');
+  },
+});
+
 class KanbanBoard extends Component {
   static propTypes = {
     cookies: instanceOf(Cookies).isRequired
@@ -42,6 +48,7 @@ class KanbanBoard extends Component {
       tasks: cookies.get('tasks') || [],
       logItems: []
     };
+    this.clearAllTasks = this.clearAllTasks.bind(this);
   }
 
   addTask(column) {
@@ -69,13 +76,12 @@ class KanbanBoard extends Component {
     }
   }
 
-  moveTask(taskId, fromCol, toCol) {
-    // task = this.state.tasks[fromCol].find(task => task.id === taskId);
-    // const newFromCol = this.state.tasks[fromCol].filter(task => task.id !== taskId);
-    // const newToCol = this.state.tasks[toCol].concat([task]);
-    // this.setState({
-    //   tasks: {
-    // })
+  moveTask(taskId, toPhase) {
+    const elemToReplace = this.state.tasks.find(el => el.task.id === parseInt(taskId));
+    const indexToReplace = this.state.tasks.indexOf(elemToReplace);
+    const newTasks = this.state.tasks.filter(el => el.task.id !== parseInt(taskId))
+      .concat({phase: toPhase, task: elemToReplace.task});
+    this.setState({tasks: newTasks});
   }
 
   clearAllTasks() {
@@ -193,7 +199,7 @@ class KanbanBoard extends Component {
               {this.renderLog()}
             </div>
             <div className="kanban-stats-container column">
-              <a className="button" onClick={() => this.clearAllTasks()}>Clear all tasks</a>
+              <a className="button" onClick={this.clearAllTasks}>Clear all tasks</a>
             </div>
           </div>
         </section>
@@ -201,17 +207,21 @@ class KanbanBoard extends Component {
     );
   }
 
-  dragulaDecorator() {
-    Dragula([], {
-      isContainer: function (el) {
-        return el.classList.contains('kanban-task-cards');
-      },
-    })
-      .on('drop', function (el, target, source) {
-        // Move task from source column to target column
-        // Container IDs are 'kanban-task-cards-doing', etc.
-        this.moveTask(el.id, target.id.split('-').slice(-1)[0], source.id.split('-').slice(-1)[0]);
-      });
+  componentDidMount() {
+    // Handle the drop event: task is moved to a different column
+    drake.on('drop', function (el, target, source) {
+      if (target === source) return;
+      // NOTE: The drop action must be reverted here due to the issue described here:
+      //       https://github.com/bevacqua/react-dragula/issues/23
+      // Basically, Dragula changes the DOM in a way that is not picked up in the virtual DOM
+      // used by React; so we revert Dragula's DOM change and allow React to render the same
+      // change from its own state (which we modify manually).
+      drake.cancel(true);
+      // NOTE: The identifiers for the tasks and columns are pulled out of their respective DOM IDs
+      // -- Task card (level) IDs: 'kanban-task-card-42', etc.
+      // -- Container IDs: 'kanban-task-cards-doing', etc.
+      this.moveTask(getIdFromDomId(el.id), getIdFromDomId(target.id));
+    }.bind(this));
   }
 }
 
@@ -226,8 +236,8 @@ const KanbanColumn = function (props) {
       <button className="kanban-add-task button" onClick={() => props.addTaskCallback()}>+</button>
       <div className="kanban-task-cards" id={"kanban-task-cards-" + props.phase}>
         {props.tasks.map(task =>
-          <nav className="level" key={task}>
-            <KanbanTaskCard title={task.title} dueDate={task.dueDate} id={task.id}/>
+          <nav className="level" id={"kanban-task-card-" + task.id} key={task}>
+            <KanbanTaskCard title={task.title} dueDate={task.dueDate}/>
           </nav>
         )}
       </div>
@@ -240,12 +250,12 @@ class KanbanTaskCard extends Component {
     super(props);
     this.state = {
       title: props.title,
-      // dueDate: props.dueDate,
       dueDate: moment(),
       // TODO: placeholder for now
       description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
       timeCreated: new Date(),
     };
+    // These binds ensure that "this" references the correct object (in this case, the KanbanTaskCard)
     this.titleChanged = this.titleChanged.bind(this);
     this.descriptionChanged = this.descriptionChanged.bind(this);
     this.dateChanged = this.dateChanged.bind(this);
@@ -266,7 +276,7 @@ class KanbanTaskCard extends Component {
   render() {
     return (
       <div className="kanban-task-card card is-fullwidth tooltip is-tooltip-info"
-           id={"kanban-task-card-" + this.props.id} data-tooltip="Drag me!">
+           data-tooltip="Drag me!">
         <div className="card-header">
           <div className="card-header-title title is-5">
             <RIEInput className="kanban-task-title"
@@ -356,5 +366,7 @@ class KanbanLogItem {
     return "[KanbanLogItem_" + this.id + "]";
   }
 }
+
+const getIdFromDomId = (domId) => domId.split('-').slice(-1)[0];
 
 export default withCookies(KanbanBoard);
