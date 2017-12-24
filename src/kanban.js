@@ -230,13 +230,12 @@ class KanbanBoard extends Component {
         <section className="kanban-meta section">
           <div className="columns">
             <div className="kanban-log-container column is-two-thirds">
-              <p>Showing the
-                <RIENumber className="kanban-log-max input"
-                           classEditing="kanban-log-max-editing input"
+              <p>Showing the &nbsp;
+                <RIENumber className="kanban-log-max input is-small"
                            value={this.state.logItemsMax}
                            change={this.logItemsMaxChanged}
                            propName="logItemsMax"/>
-                most recent entries</p>
+                &nbsp; most recent entries</p>
               {this.renderLog()}
             </div>
             <div className="kanban-stats-container column">
