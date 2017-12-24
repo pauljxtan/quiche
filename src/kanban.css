@@ -10,6 +10,9 @@
   --colour-done-dark: rgb(121, 102, 128);
 }
 
+div.clear-float {
+  clear: left;
+}
 .section {
   padding: 1rem 1.5rem !important;
 }
@@ -39,13 +42,22 @@
   width: 100%;
 }
 .kanban-task-card .card-content {
-  padding: 0.5rem 0.5rem 0 0.5rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+}
+.kanban-task-card p.control {
+  margin-bottom: 0 !important;
+}
+.kanban-task-title {
+  text-align: left;
 }
 .kanban-task-description {
   text-align: left;
 }
 .kanban-task-duedate {
-  padding: 0.5rem 0.5rem 0 0.5rem;
+  /*padding: 0.5rem 0.5rem 0 0.5rem;*/
+}
+.kanban-task-datepicker {
+  width: 86px !important;
 }
 .kanban-column-todo {
   background: var(--colour-todo-light);
@@ -71,6 +83,9 @@
 .kanban-task-counter {
   border-radius: 50% !important;
   /*vertical-align: text-bottom !important;*/
+}
+textarea.kanban-task-title {
+  /*max-height: 400px !important;*/
 }
 .kanban-log-max {
   display: inline-block;

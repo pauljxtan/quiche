@@ -14,6 +14,7 @@ import './kanban.css';
 
 /*
 TODO:
+-- Propagate task edits up to the board
 -- Get the cookies actually working
 -- Responsive multiple cards per level
 -- Move logging logic out of board object
@@ -316,36 +317,57 @@ class KanbanTaskCard extends Component {
     this.setState({dueDate: date});
   }
 
+  // TODO: Move the description textarea somewhere else (modal?) so the cards aren't too big
   render() {
     return (
       <div className="kanban-task-card card is-fullwidth tooltip is-tooltip-info"
            data-tooltip="Drag me!">
-        <div className="card-header">
-          <div className="card-header-title title is-5">
-            <RIEInput className="kanban-task-title"
-                      classEditing="kanban-task-title-editing input"
-                      value={this.state.title}
-                      change={this.titleChanged}
-                      propName="title"/>
-          </div>
-        </div>
+        {/*<div className="card-header">*/}
+        {/*<div className="card-header-title title is-5">*/}
+        {/*<RIEInput className="kanban-task-title"*/}
+        {/*classEditing="kanban-task-title-editing input"*/}
+        {/*value={this.state.title}*/}
+        {/*change={this.titleChanged}*/}
+        {/*propName="title"/>*/}
+        {/*</div>*/}
+        {/*</div>*/}
         <div className="card-content">
           <div className="content">
-            <RIETextArea className="kanban-task-description"
-                         classEditing="kanban-task-description-editing textarea"
-                         value={this.state.description}
-                         change={this.descriptionChanged}
-                         propName="description"/>
-
-            <div className="kanban-task-duedate field has-addons">
-              <p className="control">
-                <a className="button is-static">Due on</a>
-              </p>
-              <div className="control">
-                <DatePicker className="kanban-task-datepicker input"
-                            selected={this.state.dueDate}
-                            onChange={this.dateChanged}
-                            dateFormat="MMM DD, YYYY"/>
+            {/*<RIETextArea className="kanban-task-description"*/}
+            {/*classEditing="kanban-task-description-editing textarea"*/}
+            {/*value={this.state.description}*/}
+            {/*change={this.descriptionChanged}*/}
+            {/*propName="description"/>*/}
+            <RIEInput className="kanban-task-title has-text-weight-bold"
+                      classEditing="kanban-task-title-editing input has-text-weight-normal"
+                      value={this.state.title}
+                      change={this.titleChanged}
+                      defaultProps={{style: {float: "left"}}}
+                      propName="title"/>
+            <div className="clear-float"></div>
+            <div className="level">
+              <div className="level-left">
+                <div className="level-item">
+                  <div className="kanban-task-duedate field has-addons">
+                    <p className="control">
+                      <a className="button is-static is-small">Due on</a>
+                    </p>
+                    <div className="control">
+                      <DatePicker className="kanban-task-datepicker input is-small"
+                                  selected={this.state.dueDate}
+                                  onChange={this.dateChanged}
+                                  dateFormat="MMM DD, YYYY"/>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="level-right">
+                <a className="button is-small has-text-danger">
+                  <span className="icon">
+                  <i className="fa fa-trash"></i>
+                  </span>
+                  &nbsp;&nbsp;Delete
+                </a>
               </div>
             </div>
           </div>
