@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import Dragula from 'react-dragula';
-import {RIEInput, RIETextArea} from 'riek';
+import {RIEInput, RIENumber, RIETextArea} from 'riek';
 import {instanceOf} from 'prop-types';
 import {withCookies, Cookies} from 'react-cookie';
 import DatePicker from 'react-datepicker';
@@ -16,6 +16,7 @@ import './kanban.css';
 TODO:
 -- Get the cookies actually working
 -- Responsive multiple cards per level
+-- Move logging logic out of board object
  */
 
 const LogActions = Object.freeze({
@@ -46,9 +47,11 @@ class KanbanBoard extends Component {
     this.logCounter = 0;
     this.state = {
       tasks: cookies.get('tasks') || [],
-      logItems: []
+      logItems: [],
+      logItemsMax: 5
     };
     this.clearAllTasks = this.clearAllTasks.bind(this);
+    this.logItemsMaxChanged = this.logItemsMaxChanged.bind(this);
   }
 
   addTask(column) {
@@ -59,7 +62,7 @@ class KanbanBoard extends Component {
     this.logAddTask(column, task);
   }
 
-  // Helper function for logging task additions
+  // Wrapper for logging task additions
   logAddTask(column, task) {
     switch (column) {
       case 'todo':
@@ -76,12 +79,31 @@ class KanbanBoard extends Component {
     }
   }
 
-  moveTask(taskId, toPhase) {
+  // Wrapper for logging task moves
+  logMoveTask(task, fromCol, toCol) {
+    switch (toCol) {
+      case 'todo':
+        this.logAction(LogActions.MOVED_TASK_TO_TODO, {'task': task, 'fromCol': fromCol});
+        break;
+      case 'doing':
+        this.logAction(LogActions.MOVED_TASK_TO_DOING, {'task': task, 'fromCol': fromCol});
+        break;
+      case 'done':
+        this.logAction(LogActions.MOVED_TASK_TO_DONE, {'task': task, 'fromCol': fromCol});
+        break;
+      default:
+        break;
+    }
+  }
+
+  moveTask(taskId, fromPhase, toPhase) {
     const elemToReplace = this.state.tasks.find(el => el.task.id === parseInt(taskId));
+    const task = elemToReplace.task;
     const indexToReplace = this.state.tasks.indexOf(elemToReplace);
     const newTasks = this.state.tasks.filter(el => el.task.id !== parseInt(taskId))
-      .concat({phase: toPhase, task: elemToReplace.task});
+      .concat({phase: toPhase, task: task});
     this.setState({tasks: newTasks});
+    this.logMoveTask(task, fromPhase, toPhase);
   }
 
   clearAllTasks() {
@@ -89,31 +111,43 @@ class KanbanBoard extends Component {
     this.logAction(LogActions.CLEARED_ALL_TASKS);
   }
 
+  logItemsMaxChanged(props) {
+    if (props.logItemsMax > 0) this.setState(props);
+  }
+
   logAction(actionType, kwargs = {}) {
     let task;
-    if (kwargs) task = kwargs['task'];
+    let fromCol;
+    if ('task' in kwargs) task = kwargs.task;
+    if ('fromCol' in kwargs) fromCol = kwargs.fromCol;
     let message;
     switch (actionType) {
       case LogActions.ADDED_TASK_TO_TODO:
-        message = 'Added task <b>' + task['title'] + '</b> to <b class="colour-text-todo">To-do</b>'
-        message += ' (due: <b>' + task['dueDate'].format("MMM DD, YYYY") + '</b>)';
+        message = 'Added task <b>' + task.title + '</b> to <b class="colour-text-todo">To-do</b>';
+        message += ' [' + (this.state.tasks.filter(el => el.phase === 'todo').length + 1) + ']';
+        message += ' (due: <b>' + task.dueDate.format("MMM DD") + '</b>)';
         break;
       case LogActions.ADDED_TASK_TO_DOING:
-        message = 'Added task <b>' + task['title'] + '</b> to <b class="colour-text-doing">Doing</b>';
-        message += ' (due: <b>' + task['dueDate'].format("MMM DD, YYYY") + '</b>)';
+        message = 'Added task <b>' + task.title + '</b> to <b class="colour-text-doing">Doing</b>';
+        message += ' [' + (this.state.tasks.filter(el => el.phase === 'doing').length + 1) + ']';
+        message += ' (due: <b>' + task.dueDate.format("MMM DD") + '</b>)';
         break;
       case LogActions.ADDED_TASK_TO_DONE:
-        message = 'Added task <b>' + task['title'] + '</b> to <b class="colour-text-done">Done</b>';
-        message += ' (due: <b>' + task['dueDate'].format("MMM DD, YYYY") + '</b>)';
+        message = 'Added task <b>' + task.title + '</b> to <b class="colour-text-done">Done</b>';
+        message += ' [' + (this.state.tasks.filter(el => el.phase === 'done').length + 1) + ']';
+        message += ' (due: <b>' + task.dueDate.format("MMM DD") + '</b>)';
         break;
       case LogActions.MOVED_TASK_TO_TODO:
-        // TODO
+        message = 'Moved task <b>' + task.title + '</b> to <b class="colour-text-todo">To-do</b>';
+        message += ' [' + (this.state.tasks.filter(el => el.phase === 'todo').length) + ']';
         break;
       case LogActions.MOVED_TASK_TO_DOING:
-        // TODO
+        message = 'Moved task <b>' + task.title + '</b> to <b class="colour-text-doing">Doing</b>';
+        message += ' [' + (this.state.tasks.filter(el => el.phase === 'doing').length) + ']';
         break;
       case LogActions.MOVED_TASK_TO_DONE:
-        // TODO
+        message = 'Moved task <b>' + task.title + '</b> to <b class="colour-text-done">Done</b>';
+        message += ' [' + (this.state.tasks.filter(el => el.phase === 'done').length) + ']';
         break;
       case LogActions.CLEARED_ALL_TASKS:
         message = 'Cleared all tasks';
@@ -159,7 +193,7 @@ class KanbanBoard extends Component {
 
   renderLog() {
     return (
-      <KanbanLog items={this.state.logItems}/>
+      <KanbanLog items={this.state.logItems} maxItems={this.state.logItemsMax}/>
     )
   }
 
@@ -196,6 +230,13 @@ class KanbanBoard extends Component {
         <section className="kanban-meta section">
           <div className="columns">
             <div className="kanban-log-container column is-two-thirds">
+              <p>Showing the
+                <RIENumber className="kanban-log-max input"
+                           classEditing="kanban-log-max-editing input"
+                           value={this.state.logItemsMax}
+                           change={this.logItemsMaxChanged}
+                           propName="logItemsMax"/>
+                most recent entries</p>
               {this.renderLog()}
             </div>
             <div className="kanban-stats-container column">
@@ -220,7 +261,10 @@ class KanbanBoard extends Component {
       // NOTE: The identifiers for the tasks and columns are pulled out of their respective DOM IDs
       // -- Task card (level) IDs: 'kanban-task-card-42', etc.
       // -- Container IDs: 'kanban-task-cards-doing', etc.
-      this.moveTask(getIdFromDomId(el.id), getIdFromDomId(target.id));
+      const taskId = getIdFromDomId(el.id);
+      const fromCol = getIdFromDomId(source.id);
+      const toCol = getIdFromDomId(target.id);
+      this.moveTask(taskId, fromCol, toCol);
     }.bind(this));
   }
 }
@@ -232,7 +276,7 @@ const KanbanColumn = function (props) {
         {props.title}
       </h3>
       &nbsp;&nbsp;
-      <a className="kanban-task-counter button is-static is-small">{props.tasks.length}</a>
+      <a className="kanban-task-counter button is-static">{props.tasks.length}</a>
       <button className="kanban-add-task button" onClick={() => props.addTaskCallback()}>+</button>
       <div className="kanban-task-cards" id={"kanban-task-cards-" + props.phase}>
         {props.tasks.map(task =>
@@ -329,9 +373,9 @@ class KanbanTaskCard extends Component {
 
 const KanbanLog = function (props) {
   return (
-    <table className="kanban-log table is-narrow is-hoverable">
+    <table className="kanban-log table is-narrow is-hoverable is-bordered">
       <tbody>
-      {props.items.map(item =>
+      {props.items.slice(0, props.maxItems).map(item =>
         <tr key={item}>
           <th>{item.timestamp}</th>
           <td dangerouslySetInnerHTML={{__html: item.message}}/>

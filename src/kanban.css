@@ -72,6 +72,10 @@
   border-radius: 50% !important;
   /*vertical-align: text-bottom !important;*/
 }
+.kanban-log-max {
+  display: inline-block;
+  max-width: 70px !important;
+}
 .colour-text-todo {
   color: var(--colour-todo-dark);
 }
