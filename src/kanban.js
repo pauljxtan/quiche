@@ -5,6 +5,8 @@ import {instanceOf} from 'prop-types';
 import {withCookies, Cookies} from 'react-cookie';
 import DatePicker from 'react-datepicker';
 import moment from 'moment';
+import fileDownload from 'js-file-download';
+import {LogActions, Logger} from './logger.js';
 
 import 'react-dragula/dist/dragula.min.css';
 import 'bulma-extensions/bulma-tooltip/bulma-tooltip.min.css';
@@ -14,34 +16,25 @@ import './kanban.css';
 
 /*
 TODO:
+-- Figure out a good separation between board and logging logic
+-- Delete task
+-- Implement command pattern to allow undo/redo, etc.
 -- Get the cookies actually working
 -- Import/export?
 -- Responsive multiple cards per level
--- Move logging logic out of board object
- */
-
-const phases = {
-  'todo': 'To-do',
-  'doing': 'Doing',
-  'done': 'Done'
-};
-
-const LogActions = Object.freeze({
-  ADDED_TASK_TO_TODO: 0,
-  ADDED_TASK_TO_DOING: 1,
-  ADDED_TASK_TO_DONE: 2,
-  MOVED_TASK_TO_TODO: 3,
-  MOVED_TASK_TO_DOING: 4,
-  MOVED_TASK_TO_DONE: 5,
-  UPDATED_TASK_TITLE: 6,
-  CLEARED_ALL_TASKS: 7,
-});
+-- Progress bar?
+-- Add category tags, priority, etc.
+-- Add display for due soon / overdue / etc.
+-- Cleanup package.json
+*/
 
 const drake = Dragula([], {
   isContainer: function (el) {
     return el.classList.contains('kanban-task-cards');
   },
 });
+
+/**** React Components ****/
 
 class KanbanBoard extends Component {
   static propTypes = {
@@ -160,62 +153,9 @@ class KanbanBoard extends Component {
     if (props.logItemsMax > 0) this.setState(props);
   }
 
-  // TODO: This huge method looks ugly here, refactor this logic elsewhere
   logAction(actionType, kwargs = {}) {
-    let task;
-    let fromCol;
-    let fromColReadable;
-    if ('task' in kwargs) task = kwargs.task;
-    if ('fromCol' in kwargs) {
-      fromCol = kwargs.fromCol;
-      fromColReadable = phases[fromCol];
-    }
-    let message;
-    switch (actionType) {
-      case LogActions.ADDED_TASK_TO_TODO:
-        message = 'Added task <b>' + task.title + '</b> to <b class="colour-text-todo">To-do</b>';
-        message += ' [' + (this.state.tasks.filter(el => el.phase === 'todo').length + 1) + ']';
-        message += ' (due: <b>' + task.dueDate.format("MMM DD") + '</b>)';
-        break;
-      case LogActions.ADDED_TASK_TO_DOING:
-        message = 'Added task <b>' + task.title + '</b> to <b class="colour-text-doing">Doing</b>';
-        message += ' [' + (this.state.tasks.filter(el => el.phase === 'doing').length + 1) + ']';
-        message += ' (due: <b>' + task.dueDate.format("MMM DD") + '</b>)';
-        break;
-      case LogActions.ADDED_TASK_TO_DONE:
-        message = 'Added task <b>' + task.title + '</b> to <b class="colour-text-done">Done</b>';
-        message += ' [' + (this.state.tasks.filter(el => el.phase === 'done').length + 1) + ']';
-        message += ' (due: <b>' + task.dueDate.format("MMM DD") + '</b>)';
-        break;
-      case LogActions.MOVED_TASK_TO_TODO:
-        message = 'Moved task <b>' + task.title + '</b> from <b class="colour-text-' + fromCol + '">' + fromColReadable + '</b>';
-        message += ' to <b class="colour-text-todo">To-do</b>';
-        message += ' [' + (this.state.tasks.filter(el => el.phase === 'todo').length) + ']';
-        break;
-      case LogActions.MOVED_TASK_TO_DOING:
-        message = 'Moved task <b>' + task.title + '</b> from <b class="colour-text-' + fromCol + '">' + fromColReadable + '</b>';
-        message += ' to <b class="colour-text-doing">Doing</b>';
-        message += ' [' + (this.state.tasks.filter(el => el.phase === 'doing').length) + ']';
-        break;
-      case LogActions.MOVED_TASK_TO_DONE:
-        message = 'Moved task <b>' + task.title + '</b> from <b class="colour-text-' + fromCol + '">' + fromColReadable + '</b>';
-        message += ' to <b class="colour-text-done">Done</b>';
-        break;
-      case LogActions.UPDATED_TASK_TITLE:
-        message = 'Changed title of task <b>' + kwargs.oldTitle + '</b> to <b>' + kwargs.newTitle + '</b>';
-        break;
-      case LogActions.UPDATED_TASK_DATE:
-        message = 'Changed due date of task <b>' + task.title + '</b>';
-        message += ' from <b>' + kwargs.oldDate.format('MMM DD, YYYY') + '</b>';
-        message += ' to <b>' + kwargs.newDate.format('MMM DD, YYYY') + '</b>';
-        break;
-      case LogActions.CLEARED_ALL_TASKS:
-        message = 'Cleared all tasks';
-        break;
-      default:
-        return;
-    }
-    const logItem = new KanbanLogItem(actionType, message, ++this.logCounter);
+    kwargs['tasks'] = this.state.tasks;
+    const logItem = Logger.getLogItem(actionType, ++this.logCounter, kwargs);
     this.setState({
       logItems: [logItem].concat(this.state.logItems)
     });
@@ -444,7 +384,6 @@ class KanbanTaskCard extends Component {
   }
 }
 
-
 const KanbanLog = function (props) {
   return (
     <table className="kanban-log table is-narrow is-hoverable is-bordered">
@@ -466,6 +405,8 @@ const KanbanLog = function (props) {
   );
 };
 
+/**** Data classes ****/
+
 class KanbanTask {
   constructor(title, dueDate, id) {
     this.title = title;
@@ -479,18 +420,7 @@ class KanbanTask {
   }
 }
 
-class KanbanLogItem {
-  constructor(actionType, message, id) {
-    this.actionType = actionType;
-    this.message = message;
-    this.id = id;
-    this.timestamp = new Date().toLocaleString();
-  }
-
-  toString() {
-    return "[KanbanLogItem_" + this.id + "]";
-  }
-}
+/**** Helper functions ****/
 
 const getIdFromDomId = (domId) => domId.split('-').slice(-1)[0];
 
