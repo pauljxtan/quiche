@@ -14,7 +14,7 @@ import './kanban.css';
 /*
 TODO:
 -- Figure out a good separation between board and logging logic
--- Implement command pattern to allow undo/redo, etc.
+-- Action history, Undo/redo, etc.
 -- Import/export?
 -- Responsive multiple cards per level
 -- Progress bar?
@@ -30,16 +30,22 @@ const drake = Dragula([], {
   },
 });
 
-/**** React Components ****/
+// Define the display name for each phase/column
+const phases = {
+  'todo': 'To-do',
+  'doing': 'Doing',
+  'done': 'Done'
+};
+
+/******** React Components ********/
 
 class Board extends Component {
   constructor(props) {
     super(props);
-    const {cookies} = this.props;
     this.taskCounter = 0;
     this.logCounter = 0;
     this.state = {
-      tasks: cookies.get('tasks') || [],
+      tasks: [],
       logItems: [],
       logItemsMax: 5
     };
@@ -124,50 +130,31 @@ class Board extends Component {
   logAction(actionType, kwargs = {}) {
     kwargs['tasks'] = this.state.tasks;
     const logItem = Logger.getLogItem(actionType, ++this.logCounter, kwargs);
-    this.setState({
-      logItems: [logItem].concat(this.state.logItems)
-    });
+    this.setState({logItems: [logItem].concat(this.state.logItems)});
   }
 
   /**** Rendering ***/
 
-  // TODO: A lot of repeated code here...
-
   renderTodoColumn() {
-    return (
-      <Column title="To-do"
-                    phase="todo"
-                    tasks={this.state.tasks.filter(task => task.phase === 'todo').map(task => task.task)}
-                    addTaskCallback={() => this.addTask('todo')}
-                    titleChangedCallback={(id, title) => this.updateTaskTitle(id, title)}
-                    dateChangedCallback={(id, date) => this.updateTaskDate(id, date)}
-                    deleteCallback={(id) => this.deleteTask(id)}
-      />
-    );
+    return this.renderGenericColumn("To-do", "todo");
   }
 
   renderDoingColumn() {
-    return (
-      <Column title="Doing"
-                    phase="doing"
-                    tasks={this.state.tasks.filter(task => task.phase === 'doing').map(task => task.task)}
-                    addTaskCallback={() => this.addTask('doing')}
-                    titleChangedCallback={(id, title) => this.updateTaskTitle(id, title)}
-                    dateChangedCallback={(id, date) => this.updateTaskDate(id, date)}
-                    deleteCallback={(id) => this.deleteTask(id)}
-      />
-    );
+    return this.renderGenericColumn("Doing", "doing");
   }
 
   renderDoneColumn() {
+    return this.renderGenericColumn("Done", "done");
+  }
+
+  renderGenericColumn(title, phase) {
     return (
-      <Column title="Done"
-                    phase="done"
-                    tasks={this.state.tasks.filter(task => task.phase === 'done').map(task => task.task)}
-                    addTaskCallback={() => this.addTask('done')}
-                    titleChangedCallback={(id, title) => this.updateTaskTitle(id, title)}
-                    dateChangedCallback={(id, date) => this.updateTaskDate(id, date)}
-                    deleteCallback={(id) => this.deleteTask(id)}
+      <Column title={title} phase={phase}
+              tasks={this.state.tasks.filter(el => el.phase === phase).map(el => el.task)}
+              addTaskCallback={() => this.addTask(phase)}
+              deleteCallback={(id) => this.deleteTask(id)}
+              titleChangedCallback={(id, title) => this.updateTaskTitle(id, title)}
+              dateChangedCallback={(id, date) => this.updateTaskDate(id, date)}
       />
     );
   }
@@ -272,9 +259,9 @@ const Column = function (props) {
           <nav className="level" id={"kanban-task-card-" + task.id} key={task}>
             <TaskCard task={task}
               // title={task.title} dueDate={task.dueDate}
-                            titleChangedCallback={(title) => props.titleChangedCallback(task.id, title)}
-                            dateChangedCallback={(date) => props.dateChangedCallback(task.id, date)}
-                            deleteCallback={() => props.deleteCallback(task.id)}
+                      titleChangedCallback={(title) => props.titleChangedCallback(task.id, title)}
+                      dateChangedCallback={(date) => props.dateChangedCallback(task.id, date)}
+                      deleteCallback={() => props.deleteCallback(task.id)}
             />
           </nav>
         )}
@@ -381,11 +368,7 @@ const LogBook = function (props) {
   );
 };
 
-/**** Command classes ****/
-
-// TODO
-
-/**** Data classes ****/
+/******** Data classes ********/
 
 class Task {
   constructor(title, dueDate, id) {
@@ -410,12 +393,6 @@ const LogActions = Object.freeze({
   UPDATED_TASK_DATE: 4,
   CLEARED_ALL_TASKS: 5,
 });
-
-const phases = {
-  'todo': 'To-do',
-  'doing': 'Doing',
-  'done': 'Done'
-};
 
 export class Logger {
   static getLogItem(actionType, id, kwargs) {
@@ -469,3 +446,4 @@ class LogItem {
 
 const getIdFromDomId = (domId) => domId.split('-').slice(-1)[0];
 
+export default Board;
