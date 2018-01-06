@@ -87,18 +87,21 @@ div.clear-float {
 textarea.kanban-task-title {
   /*max-height: 400px !important;*/
 }
+.kanban-log {
+  width: 100%;
+}
 .kanban-log-max {
   display: inline-block;
   max-width: 70px !important;
 }
 .colour-text-todo {
-  color: var(--colour-todo-dark);
+  color: var(--colour-todo-medium);
 }
 .colour-text-doing {
-  color: var(--colour-doing-dark);
+  color: var(--colour-doing-medium);
 }
 .colour-text-done {
-  color: var(--colour-done-dark);
+  color: var(--colour-done-medium);
 }
 /*.dragging {*/
 /*}*/

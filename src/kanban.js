@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import Dragula from 'react-dragula';
-import {RIEInput, RIENumber, RIETextArea} from 'riek';
+import {RIEInput, RIENumber} from 'riek';
 import {instanceOf} from 'prop-types';
 import {withCookies, Cookies} from 'react-cookie';
 import DatePicker from 'react-datepicker';
@@ -14,11 +14,17 @@ import './kanban.css';
 
 /*
 TODO:
--- Propagate task edits up to the board
 -- Get the cookies actually working
+-- Import/export?
 -- Responsive multiple cards per level
 -- Move logging logic out of board object
  */
+
+const phases = {
+  'todo': 'To-do',
+  'doing': 'Doing',
+  'done': 'Done'
+};
 
 const LogActions = Object.freeze({
   ADDED_TASK_TO_TODO: 0,
@@ -27,7 +33,8 @@ const LogActions = Object.freeze({
   MOVED_TASK_TO_TODO: 3,
   MOVED_TASK_TO_DOING: 4,
   MOVED_TASK_TO_DONE: 5,
-  CLEARED_ALL_TASKS: 6,
+  UPDATED_TASK_TITLE: 6,
+  CLEARED_ALL_TASKS: 7,
 });
 
 const drake = Dragula([], {
@@ -56,7 +63,7 @@ class KanbanBoard extends Component {
   }
 
   addTask(column) {
-    const task = new KanbanTask('Untitled', new Date(), ++this.taskCounter);
+    const task = new KanbanTask('Do a thing', new Date(), ++this.taskCounter);
     this.setState({
       tasks: this.state.tasks.concat([{'phase': column, 'task': task}])
     });
@@ -97,14 +104,51 @@ class KanbanBoard extends Component {
     }
   }
 
+  // Wrapper for logging task title updates
+  logUpdateTaskTitle(task, oldTitle, newTitle) {
+    this.logAction(
+      LogActions.UPDATED_TASK_TITLE,
+      {'task': task, 'oldTitle': oldTitle, 'newTitle': newTitle}
+    );
+  }
+
+  // Wrapper for logging task due date updates
+  logUpdateTaskDate(task, oldDate, newDate) {
+    this.logAction(
+      LogActions.UPDATED_TASK_DUE_DATE,
+      {'task': task, 'oldDate': oldDate, 'newDate': newDate}
+    );
+  }
+
   moveTask(taskId, fromPhase, toPhase) {
     const elemToReplace = this.state.tasks.find(el => el.task.id === parseInt(taskId));
     const task = elemToReplace.task;
-    const indexToReplace = this.state.tasks.indexOf(elemToReplace);
     const newTasks = this.state.tasks.filter(el => el.task.id !== parseInt(taskId))
       .concat({phase: toPhase, task: task});
     this.setState({tasks: newTasks});
     this.logMoveTask(task, fromPhase, toPhase);
+  }
+
+  // TODO: Refactor task updates (title, due date, etc.) to common method
+
+  updateTaskTitle(id, title) {
+    const elemToReplace = this.state.tasks.find(el => el.task.id === parseInt(id));
+    const oldTask = elemToReplace.task;
+    const updatedTask = new KanbanTask(title, oldTask.dueDate, oldTask.id);
+    const newTasks = this.state.tasks.filter(el => el.task.id !== parseInt(id))
+      .concat({phase: elemToReplace.phase, task: updatedTask});
+    this.setState({tasks: newTasks});
+    this.logUpdateTaskTitle(updatedTask, oldTask.title, updatedTask.title);
+  }
+
+  updateTaskDate(id, date) {
+    const elemToReplace = this.state.tasks.find(el => el.task.id === parseInt(id));
+    const oldTask = elemToReplace.task;
+    const updatedTask = new KanbanTask(oldTask.title, moment(date), oldTask.id);
+    const newTasks = this.state.tasks.filter(el => el.task.id !== parseInt(id))
+      .concat({phase: elemToReplace.phase, task: updatedTask});
+    this.setState({tasks: newTasks});
+    this.logUpdateTaskDate(updatedTask, oldTask.dueDate, updatedTask.dueDate);
   }
 
   clearAllTasks() {
@@ -116,11 +160,16 @@ class KanbanBoard extends Component {
     if (props.logItemsMax > 0) this.setState(props);
   }
 
+  // TODO: This huge method looks ugly here, refactor this logic elsewhere
   logAction(actionType, kwargs = {}) {
     let task;
     let fromCol;
+    let fromColReadable;
     if ('task' in kwargs) task = kwargs.task;
-    if ('fromCol' in kwargs) fromCol = kwargs.fromCol;
+    if ('fromCol' in kwargs) {
+      fromCol = kwargs.fromCol;
+      fromColReadable = phases[fromCol];
+    }
     let message;
     switch (actionType) {
       case LogActions.ADDED_TASK_TO_TODO:
@@ -139,16 +188,26 @@ class KanbanBoard extends Component {
         message += ' (due: <b>' + task.dueDate.format("MMM DD") + '</b>)';
         break;
       case LogActions.MOVED_TASK_TO_TODO:
-        message = 'Moved task <b>' + task.title + '</b> to <b class="colour-text-todo">To-do</b>';
+        message = 'Moved task <b>' + task.title + '</b> from <b class="colour-text-' + fromCol + '">' + fromColReadable + '</b>';
+        message += ' to <b class="colour-text-todo">To-do</b>';
         message += ' [' + (this.state.tasks.filter(el => el.phase === 'todo').length) + ']';
         break;
       case LogActions.MOVED_TASK_TO_DOING:
-        message = 'Moved task <b>' + task.title + '</b> to <b class="colour-text-doing">Doing</b>';
+        message = 'Moved task <b>' + task.title + '</b> from <b class="colour-text-' + fromCol + '">' + fromColReadable + '</b>';
+        message += ' to <b class="colour-text-doing">Doing</b>';
         message += ' [' + (this.state.tasks.filter(el => el.phase === 'doing').length) + ']';
         break;
       case LogActions.MOVED_TASK_TO_DONE:
-        message = 'Moved task <b>' + task.title + '</b> to <b class="colour-text-done">Done</b>';
-        message += ' [' + (this.state.tasks.filter(el => el.phase === 'done').length) + ']';
+        message = 'Moved task <b>' + task.title + '</b> from <b class="colour-text-' + fromCol + '">' + fromColReadable + '</b>';
+        message += ' to <b class="colour-text-done">Done</b>';
+        break;
+      case LogActions.UPDATED_TASK_TITLE:
+        message = 'Changed title of task <b>' + kwargs.oldTitle + '</b> to <b>' + kwargs.newTitle + '</b>';
+        break;
+      case LogActions.UPDATED_TASK_DATE:
+        message = 'Changed due date of task <b>' + task.title + '</b>';
+        message += ' from <b>' + kwargs.oldDate.format('MMM DD, YYYY') + '</b>';
+        message += ' to <b>' + kwargs.newDate.format('MMM DD, YYYY') + '</b>';
         break;
       case LogActions.CLEARED_ALL_TASKS:
         message = 'Cleared all tasks';
@@ -168,6 +227,8 @@ class KanbanBoard extends Component {
                     phase="todo"
                     tasks={this.state.tasks.filter(task => task.phase === 'todo').map(task => task.task)}
                     addTaskCallback={() => this.addTask('todo')}
+                    titleChangedCallback={(id, title) => this.updateTaskTitle(id, title)}
+                    dateChangedCallback={(id, date) => this.updateTaskDate(id, date)}
       />
     );
   }
@@ -178,6 +239,8 @@ class KanbanBoard extends Component {
                     phase="doing"
                     tasks={this.state.tasks.filter(task => task.phase === 'doing').map(task => task.task)}
                     addTaskCallback={() => this.addTask('doing')}
+                    titleChangedCallback={(id, title) => this.updateTaskTitle(id, title)}
+                    dateChangedCallback={(id, date) => this.updateTaskDate(id, date)}
       />
     );
   }
@@ -188,6 +251,8 @@ class KanbanBoard extends Component {
                     phase="done"
                     tasks={this.state.tasks.filter(task => task.phase === 'done').map(task => task.task)}
                     addTaskCallback={() => this.addTask('done')}
+                    titleChangedCallback={(id, title) => this.updateTaskTitle(id, title)}
+                    dateChangedCallback={(id, date) => this.updateTaskDate(id, date)}
       />
     );
   }
@@ -231,16 +296,23 @@ class KanbanBoard extends Component {
         <section className="kanban-meta section">
           <div className="columns">
             <div className="kanban-log-container column is-two-thirds">
-              <p>Showing the &nbsp;
-                <RIENumber className="kanban-log-max input is-small"
-                           value={this.state.logItemsMax}
-                           change={this.logItemsMaxChanged}
-                           propName="logItemsMax"/>
-                &nbsp; most recent entries</p>
+              <div className="columns">
+                <div className="column is-two-thirds">
+                  <p>Showing the &nbsp;
+                    <RIENumber className="kanban-log-max input is-small"
+                               value={this.state.logItemsMax}
+                               change={this.logItemsMaxChanged}
+                               propName="logItemsMax"/>
+                    &nbsp; most recent log entries</p>
+                </div>
+                <div className="column">
+                  <a className="button is-outlined is-danger" onClick={this.clearAllTasks}>Clear all tasks</a>
+                </div>
+              </div>
               {this.renderLog()}
             </div>
             <div className="kanban-stats-container column">
-              <a className="button" onClick={this.clearAllTasks}>Clear all tasks</a>
+              TBA
             </div>
           </div>
         </section>
@@ -281,7 +353,11 @@ const KanbanColumn = function (props) {
       <div className="kanban-task-cards" id={"kanban-task-cards-" + props.phase}>
         {props.tasks.map(task =>
           <nav className="level" id={"kanban-task-card-" + task.id} key={task}>
-            <KanbanTaskCard title={task.title} dueDate={task.dueDate}/>
+            <KanbanTaskCard task={task}
+              // title={task.title} dueDate={task.dueDate}
+                            titleChangedCallback={(title) => props.titleChangedCallback(task.id, title)}
+                            dateChangedCallback={(date) => props.dateChangedCallback(task.id, date)}
+            />
           </nav>
         )}
       </div>
@@ -293,20 +369,25 @@ class KanbanTaskCard extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      title: props.title,
-      dueDate: moment(),
-      // TODO: placeholder for now
+      title: props.task.title,
+      dueDate: props.task.dueDate,
+      // TODO: Probably will just remove the description entirely
       description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      timeCreated: new Date(),
+      dateCreated: props.task.dateCreated
     };
+    this.id = props.id;
     // These binds ensure that "this" references the correct object (in this case, the KanbanTaskCard)
     this.titleChanged = this.titleChanged.bind(this);
     this.descriptionChanged = this.descriptionChanged.bind(this);
     this.dateChanged = this.dateChanged.bind(this);
+    // Callbacks for updating task attributes
+    this.titleChangedCallback = props.titleChangedCallback;
+    this.dateChangedCallback = props.dateChangedCallback;
   }
 
   titleChanged(props) {
     if (props.title !== "") this.setState(props);
+    this.titleChangedCallback(props.title);
   }
 
   descriptionChanged(props) {
@@ -315,29 +396,15 @@ class KanbanTaskCard extends Component {
 
   dateChanged(date) {
     this.setState({dueDate: date});
+    this.dateChangedCallback(date);
   }
 
-  // TODO: Move the description textarea somewhere else (modal?) so the cards aren't too big
   render() {
     return (
       <div className="kanban-task-card card is-fullwidth tooltip is-tooltip-info"
            data-tooltip="Drag me!">
-        {/*<div className="card-header">*/}
-        {/*<div className="card-header-title title is-5">*/}
-        {/*<RIEInput className="kanban-task-title"*/}
-        {/*classEditing="kanban-task-title-editing input"*/}
-        {/*value={this.state.title}*/}
-        {/*change={this.titleChanged}*/}
-        {/*propName="title"/>*/}
-        {/*</div>*/}
-        {/*</div>*/}
         <div className="card-content">
           <div className="content">
-            {/*<RIETextArea className="kanban-task-description"*/}
-            {/*classEditing="kanban-task-description-editing textarea"*/}
-            {/*value={this.state.description}*/}
-            {/*change={this.descriptionChanged}*/}
-            {/*propName="description"/>*/}
             <RIEInput className="kanban-task-title has-text-weight-bold"
                       classEditing="kanban-task-title-editing input has-text-weight-normal"
                       value={this.state.title}
@@ -372,20 +439,6 @@ class KanbanTaskCard extends Component {
             </div>
           </div>
         </div>
-        {/*<footer className="card-footer">*/}
-        {/*<a href="#" className="card-footer-item has-text-primary">*/}
-        {/*<span className="icon">*/}
-        {/*<i className="fa fa-edit">&nbsp;</i>*/}
-        {/*</span>*/}
-        {/*Edit*/}
-        {/*</a>*/}
-        {/*<a href="#" className="card-footer-item has-text-danger">*/}
-        {/*<span className="icon">*/}
-        {/*<i className="fa fa-trash">&nbsp;</i>*/}
-        {/*</span>*/}
-        {/*Delete*/}
-        {/*</a>*/}
-        {/*</footer>*/}
       </div>
     )
   }
@@ -395,10 +448,16 @@ class KanbanTaskCard extends Component {
 const KanbanLog = function (props) {
   return (
     <table className="kanban-log table is-narrow is-hoverable is-bordered">
+      <thead>
+      <tr>
+        <th>Time</th>
+        <th>Event</th>
+      </tr>
+      </thead>
       <tbody>
       {props.items.slice(0, props.maxItems).map(item =>
         <tr key={item}>
-          <th>{item.timestamp}</th>
+          <td>{item.timestamp}</td>
           <td dangerouslySetInnerHTML={{__html: item.message}}/>
         </tr>
       )}
@@ -411,6 +470,7 @@ class KanbanTask {
   constructor(title, dueDate, id) {
     this.title = title;
     this.dueDate = moment(dueDate);
+    this.dateCreated = moment(new Date());
     this.id = id;
   }
 
