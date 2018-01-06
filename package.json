@@ -15,7 +15,8 @@
     "react-cookie": "^2.1.2",
     "font-awesome": "^4.7.0",
     "react-datepicker": "^0.64.0",
-    "babel-plugin-add-module-exports": "^0.2.1"
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "js-file-download": "^0.4.1"
   },
   "scripts": {
     "start": "react-scripts start",
