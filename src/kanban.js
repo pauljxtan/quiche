@@ -23,6 +23,8 @@ TODO:
 -- Cleanup package.json
 */
 
+const maxHistoryDepth = 10;
+
 // Drag-and-drop handler
 const drake = Dragula([], {
   isContainer: function (el) {
@@ -39,17 +41,24 @@ const phases = {
 
 /******** React Components ********/
 
+// The master component - basically all state is stored in here
 class Board extends Component {
   constructor(props) {
     super(props);
+
     this.taskCounter = 0;
     this.logCounter = 0;
+    // Entire state is pushed to history with each action
+    this.stateHistory = [];
+
     this.state = {
       tasks: [],
       logItems: [],
       logItemsMax: 5
     };
+
     this.clearAllTasks = this.clearAllTasks.bind(this);
+    this.rollbackState = this.rollbackState.bind(this);
     this.logItemsMaxChanged = this.logItemsMaxChanged.bind(this);
   }
 
@@ -57,13 +66,13 @@ class Board extends Component {
 
   addTask(column) {
     const task = new Task('Do a thing', new Date(), ++this.taskCounter);
-    this.setState({
-      tasks: this.state.tasks.concat([{'phase': column, 'task': task}])
-    });
+    this.pushStateToHistory();
+    this.setState({tasks: this.state.tasks.concat([{'phase': column, 'task': task}])});
     this.logAction(
       LogActions.ADDED_TASK,
       {'task': task, 'toCol': column}
     );
+    console.log(this.stateHistory);
   }
 
   moveTask(taskId, fromPhase, toPhase) {
@@ -71,6 +80,7 @@ class Board extends Component {
     const task = elemToReplace.task;
     const newTasks = this.state.tasks.filter(el => el.task.id !== parseInt(taskId))
       .concat({phase: toPhase, task: task});
+    this.pushStateToHistory();
     this.setState({tasks: newTasks});
     this.logAction(
       LogActions.MOVED_TASK,
@@ -81,6 +91,7 @@ class Board extends Component {
   deleteTask(taskId) {
     const taskToDelete = this.state.tasks.find(el => el.task.id === parseInt(taskId)).task;
     const newTasks = this.state.tasks.filter(el => el.task.id !== parseInt(taskId));
+    this.pushStateToHistory();
     this.setState({tasks: newTasks});
     this.logAction(
       LogActions.DELETED_TASK,
@@ -96,6 +107,7 @@ class Board extends Component {
     const updatedTask = new Task(title, oldTask.dueDate, oldTask.id);
     const newTasks = this.state.tasks.filter(el => el.task.id !== parseInt(id))
       .concat({phase: elemToReplace.phase, task: updatedTask});
+    this.pushStateToHistory();
     this.setState({tasks: newTasks});
     this.logAction(
       LogActions.UPDATED_TASK_TITLE,
@@ -109,6 +121,7 @@ class Board extends Component {
     const updatedTask = new Task(oldTask.title, moment(date), oldTask.id);
     const newTasks = this.state.tasks.filter(el => el.task.id !== parseInt(id))
       .concat({phase: elemToReplace.phase, task: updatedTask});
+    this.pushStateToHistory();
     this.setState({tasks: newTasks});
     this.logAction(
       LogActions.UPDATED_TASK_DATE,
@@ -117,6 +130,7 @@ class Board extends Component {
   }
 
   clearAllTasks() {
+    this.pushStateToHistory();
     this.setState({tasks: []});
     this.logAction(LogActions.CLEARED_ALL_TASKS);
   }
@@ -131,6 +145,18 @@ class Board extends Component {
     kwargs['tasks'] = this.state.tasks;
     const logItem = Logger.getLogItem(actionType, ++this.logCounter, kwargs);
     this.setState({logItems: [logItem].concat(this.state.logItems)});
+  }
+
+  /**** Helpers ****/
+
+  pushStateToHistory() {
+    this.stateHistory.push(this.state);
+    if (this.stateHistory.length > maxHistoryDepth)
+      this.stateHistory.shift();
+  }
+
+  rollbackState() {
+    this.setState(this.stateHistory.pop());
   }
 
   /**** Rendering ***/
@@ -208,13 +234,24 @@ class Board extends Component {
                     &nbsp; most recent log entries</p>
                 </div>
                 <div className="column">
-                  <a className="button is-outlined is-danger" onClick={this.clearAllTasks}>Clear all tasks</a>
+                  <div className="columns">
+                    <div className="column">
+                      <a className="button is-outlined is-warning" onClick={this.rollbackState}>
+                        Undo
+                      </a>
+                    </div>
+                    <div className="column">
+                      <a className="button is-outlined is-danger" onClick={this.clearAllTasks}>
+                        Clear all tasks
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
               {this.renderLogBook()}
             </div>
             <div className="kanban-stats-container column">
-              TBA
+              TBA (stats, reminders, etc.)
             </div>
           </div>
         </section>
