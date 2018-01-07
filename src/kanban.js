@@ -3,7 +3,7 @@ import Dragula from 'react-dragula';
 import {RIEInput, RIENumber} from 'riek';
 import DatePicker from 'react-datepicker';
 import moment from 'moment';
-// import fileDownload from 'js-file-download';
+import fileDownload from 'js-file-download';
 
 import 'react-dragula/dist/dragula.min.css';
 import 'bulma-extensions/bulma-tooltip/bulma-tooltip.min.css';
@@ -14,7 +14,6 @@ import './kanban.css';
 /*
 TODO:
 -- Figure out a good separation between board and logging logic
--- Action history, Undo/redo, etc.
 -- Import/export?
 -- Responsive multiple cards per level
 -- Progress bar?
@@ -23,7 +22,7 @@ TODO:
 -- Cleanup package.json
 */
 
-const maxHistoryDepth = 10;
+const maxHistoryDepth = 128;
 
 // Drag-and-drop handler
 const drake = Dragula([], {
@@ -60,6 +59,8 @@ class Board extends Component {
     this.clearAllTasks = this.clearAllTasks.bind(this);
     this.rollbackState = this.rollbackState.bind(this);
     this.logItemsMaxChanged = this.logItemsMaxChanged.bind(this);
+    this.importStateFromFile = this.importStateFromFile.bind(this);
+    this.exportStateToFile = this.exportStateToFile.bind(this);
   }
 
   /**** Task actions ****/
@@ -72,7 +73,6 @@ class Board extends Component {
       LogActions.ADDED_TASK,
       {'task': task, 'toCol': column}
     );
-    console.log(this.stateHistory);
   }
 
   moveTask(taskId, fromPhase, toPhase) {
@@ -159,6 +159,15 @@ class Board extends Component {
     this.setState(this.stateHistory.pop());
   }
 
+  importStateFromFile() {
+    // TODO
+  }
+
+  exportStateToFile() {
+    const timestamp = moment().format('YYMMDDhhmmss');
+    fileDownload(JSON.stringify(this.state), `quiche_${timestamp}.json`);
+  }
+
   /**** Rendering ***/
 
   renderTodoColumn() {
@@ -222,36 +231,51 @@ class Board extends Component {
           </div>
         </section>
         <section className="kanban-meta section">
-          <div className="columns">
-            <div className="kanban-log-container column is-two-thirds">
-              <div className="columns">
-                <div className="column is-two-thirds">
-                  <p>Showing the &nbsp;
-                    <RIENumber className="kanban-log-max input is-small"
-                               value={this.state.logItemsMax}
-                               change={this.logItemsMaxChanged}
-                               propName="logItemsMax"/>
-                    &nbsp; most recent log entries</p>
-                </div>
-                <div className="column">
-                  <div className="columns">
-                    <div className="column">
-                      <a className="button is-outlined is-warning" onClick={this.rollbackState}>
-                        Undo
-                      </a>
-                    </div>
-                    <div className="column">
-                      <a className="button is-outlined is-danger" onClick={this.clearAllTasks}>
-                        Clear all tasks
-                      </a>
-                    </div>
-                  </div>
-                </div>
+          <div className="level">
+            <div className="level-left">
+              <div className="level-item">
+                <p>Showing the &nbsp;
+                  <RIENumber className="kanban-log-max input is-small"
+                             value={this.state.logItemsMax}
+                             change={this.logItemsMaxChanged}
+                             propName="logItemsMax"/>
+                  &nbsp; most recent actions</p>
               </div>
-              {this.renderLogBook()}
+              <div className="level-item">
+                <a className="button is-outlined is-warning" onClick={this.rollbackState}>
+                  Undo
+                </a>
+              </div>
+              <div className="level-item">
+                <a className="button is-outlined is-danger" onClick={this.clearAllTasks}>
+                  Clear all tasks
+                </a>
+              </div>
             </div>
-            <div className="kanban-stats-container column">
-              TBA (stats, reminders, etc.)
+            <div className="level-right">
+              <div className="level-item">
+                <a className="button is-outlined is-primary" onClick={this.importStateFromFile}>
+                  Import file
+                </a>
+              </div>
+              <div className="level-item">
+                  <a className="button is-outlined is-info" onClick={this.exportStateToFile}>
+                    Export file
+                  </a>
+              </div>
+
+            </div>
+          </div>
+          <div className="level">
+            <div className="level-left">
+              <div className="level-item">
+                {this.renderLogBook()}
+              </div>
+            </div>
+            <div className="level-right">
+              <div className="level-item">
+                TBA (stats, reminders, etc.)
+              </div>
             </div>
           </div>
         </section>
