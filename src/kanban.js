@@ -14,7 +14,6 @@ import './kanban.css';
 /*
 TODO:
 -- Figure out a good separation between board and logging logic
--- Import/export?
 -- Responsive multiple cards per level
 -- Progress bar?
 -- Add category tags, priority, etc.
@@ -59,8 +58,8 @@ class Board extends Component {
     this.clearAllTasks = this.clearAllTasks.bind(this);
     this.rollbackState = this.rollbackState.bind(this);
     this.logItemsMaxChanged = this.logItemsMaxChanged.bind(this);
-    this.importStateFromFile = this.importStateFromFile.bind(this);
     this.exportStateToFile = this.exportStateToFile.bind(this);
+    this.importStateCallback = this.importStateCallback.bind(this);
   }
 
   /**** Task actions ****/
@@ -147,6 +146,28 @@ class Board extends Component {
     this.setState({logItems: [logItem].concat(this.state.logItems)});
   }
 
+  /**** Callbacks ****/
+
+  importFileSelected(event, importStateCallback) {
+    const importedFile = event.target.files[0];
+    if (!importedFile) return;
+
+    let importedState;
+    const fileReader = new FileReader();
+    fileReader.onload = function() {
+      importedState = JSON.parse(fileReader.result);
+      importStateCallback(importedState);
+    };
+    fileReader.readAsText(importedFile);
+  }
+
+  importStateCallback(importedState) {
+    // TODO: Deserialize dates properly
+    // this.pushStateToHistory();
+    // this.setState(importedState);
+  }
+
+
   /**** Helpers ****/
 
   pushStateToHistory() {
@@ -160,7 +181,7 @@ class Board extends Component {
   }
 
   importStateFromFile() {
-    // TODO
+
   }
 
   exportStateToFile() {
@@ -254,14 +275,16 @@ class Board extends Component {
             </div>
             <div className="level-right">
               <div className="level-item">
-                <a className="button is-outlined is-primary" onClick={this.importStateFromFile}>
+                <input id="import-input" type="file"
+                       onChange={(event) => this.importFileSelected(event, this.importStateCallback)} />
+                <label htmlFor="import-input" className="button is-outlined is-primary" id="import-button">
                   Import file
-                </a>
+                </label>
               </div>
               <div className="level-item">
-                  <a className="button is-outlined is-info" onClick={this.exportStateToFile}>
-                    Export file
-                  </a>
+                <a className="button is-outlined is-info" onClick={this.exportStateToFile}>
+                  Export file
+                </a>
               </div>
 
             </div>
